@@ -1,93 +1,164 @@
 import akshare as ak
-import yfinance as yf
+import pandas as pd
 import json
-import datetime
 import os
+from datetime import datetime, timedelta
+import time
 import traceback
 
-def fetch_all_data():
-    data = {
-        "update_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-        "pbc": [], "fx": {}, "futures_rank": [], "sentiment": {},
-        "commodities": {}, "rates": {}, "macro_cn": {}, "macro_us": {},
-        "margin": {}, "money_supply": []
-    }
-    
-    print("开始抓取数据...")
-    
-    # 1. 央行逆回购 (历史与未来)
-    try:
-        df = ak.macro_china_pbc_open_market_operation()
-        data['pbc'] = df.tail(21).to_dict(orient='records') # 取近21条覆盖7天历史+14天到期
-    except Exception as e: print(f"PBC Error: {e}")
-        
-    # 2. 汇率 (在岸 CNY, 离岸 CNH)
-    try:
-        cny = yf.Ticker("CNY=X").history(period="5d")['Close'].dropna().iloc[-1]
-        cnh = yf.Ticker("CNH=X").history(period="5d")['Close'].dropna().iloc[-1]
-        data['fx'] = {"CNY": round(cny, 4), "CNH": round(cnh, 4)}
-    except Exception as e: print(f"FX Error: {e}")
+DATA_DIR = os.path.join(os.path.dirname(__file__), '..', 'docs', 'data')
+os.makedirs(DATA_DIR, exist_ok=True)
 
-    # 3. 机构多单空单 (以中金所沪深300股指期货为例)
-    try:
-        end_date = datetime.datetime.now().strftime("%Y%m%d")
-        df = ak.get_rank_sum_daily(start_day="20230101", end_day=end_date, market="中金所", symbol="沪深300股指期货")
-        data['futures_rank'] = df.tail(5).to_dict(orient='records')
-    except Exception as e: print(f"Futures Error: {e}")
+def safe_call(func, *args, retries=2, **kwargs):
+    for i in range(retries + 1):
+        try:
+            return func(*args, **kwargs)
+        except Exception as e:
+            print(f"  retry {i}: {e}")
+            time.sleep(3)
+    return None
 
-    # 4. 情绪指标 (北向资金)
-    try:
-        df = ak.stock_hsgt_north_net_flow_in_em(symbol="北上")
-        data['sentiment'] = {"north_flow": df.tail(10).to_dict(orient='records')}
-    except Exception as e: print(f"Sentiment Error: {e}")
-
-    # 5. 大宗商品 (黄金, 原油)
-    try:
-        gold = yf.Ticker("GC=F").history(period="5d")['Close'].dropna().iloc[-1]
-        oil = yf.Ticker("CL=F").history(period="5d")['Close'].dropna().iloc[-1]
-        data['commodities'] = {"Gold": round(gold, 2), "Oil": round(oil, 2)}
-    except Exception as e: print(f"Commodities Error: {e}")
-
-    # 6. 中美5年期利率
-    try:
-        cn_bond = ak.bond_china_yield(date=datetime.datetime.now().strftime("%Y%m%d"))
-        cn_5y = cn_bond[cn_bond['曲线名称'].str.contains('5年')]['收益率'].iloc[0]
-        us_5y = yf.Ticker("^FVX").history(period="5d")['Close'].dropna().iloc[-1] / 10 # 美债单位转换
-        data['rates'] = {"CN_5Y": cn_5y, "US_5Y": round(us_5y, 3)}
-    except Exception as e: print(f"Rates Error: {e}")
-
-    # 7. 宏观数据 (CPI, PPI, PMI, 就业)
-    try:
-        cn_cpi = ak.macro_china_cpi_yearly().iloc[-1]['全国-当月-同比']
-        cn_ppi = ak.macro_china_ppi_yearly().iloc[-1]['当月-同比']
-        cn_pmi = ak.macro_china_pmi_yearly().iloc[-1]['制造业-指数']
-        
-        us_cpi = ak.macro_usa_cpi().iloc[-1]['当月-同比'] 
-        us_pmi = ak.macro_usa_ism_pmi().iloc[-1]['制造业-指数']
-        us_nonfarm = ak.macro_usa_non_farm().iloc[-1]['季调后非农就业人口']
-        
-        data['macro_cn'] = {"CPI": cn_cpi, "PPI": cn_ppi, "PMI": cn_pmi}
-        data['macro_us'] = {"CPI": us_cpi, "PMI": us_pmi, "NonFarm": us_nonfarm}
-    except Exception as e: print(f"Macro Error: {e}")
-
-    # 8. A股两融余额
-    try:
-        sse = ak.stock_margin_sse().iloc[-1]['融资融券余额']
-        szse = ak.stock_margin_szse().iloc[-1]['融资融券余额']
-        data['margin'] = {"Total": sse + szse}
-    except Exception as e: print(f"Margin Error: {e}")
-
-    # 9. M1, M2
-    try:
-        m2_df = ak.macro_china_money_supply()
-        data['money_supply'] = m2_df.tail(12).to_dict(orient='records')
-    except Exception as e: print(f"Money Supply Error: {e}")
-
+def fetch_macro_china():
+    """中国宏观：CPI/PPI/PMI/M1/M2/LPR"""
+    data = {}
+    # CPI
+    df = safe_call(ak.macro_china_cpi)
+    if df is not None:
+        data['cpi'] = df.head(12).to_dict(orient='records')
+    # PPI
+    df = safe_call(ak.macro_china_ppi)
+    if df is not None:
+        data['ppi'] = df.head(12).to_dict(orient='records')
+    # PMI
+    df = safe_call(ak.macro_china_pmi)
+    if df is not None:
+        data['pmi'] = df.head(12).to_dict(orient='records')
+    # 货币供应量 M1/M2
+    df = safe_call(ak.macro_china_money_supply)
+    if df is not None:
+        data['money_supply'] = df.head(12).to_dict(orient='records')
+    # LPR
+    df = safe_call(ak.macro_china_lpr)
+    if df is not None:
+        data['lpr'] = df.head(24).to_dict(orient='records')
     return data
 
-if __name__ == "__main__":
-    data = fetch_all_data()
-    os.makedirs("docs", exist_ok=True) # 创建 docs 文件夹用于 GitHub Pages 部署
-    with open("docs/data.json", "w", encoding="utf-8") as f:
-        json.dump(data, f, ensure_ascii=False, indent=4)
-    print("✅ 数据抓取完成，已保存至 docs/data.json")
+def fetch_macro_usa():
+    """美国宏观：CPI/PPI/PMI/非农/失业率"""
+    data = {}
+    for name, func in [
+        ('cpi', ak.macro_usa_cpi_monthly),
+        ('non_farm', ak.macro_usa_non_farm),
+        ('unemployment', ak.macro_usa_unemployment_rate),
+    ]:
+        df = safe_call(func)
+        if df is not None:
+            data[name] = df.head(12).to_dict(orient='records')
+    return data
+
+def fetch_rates():
+    """中美国债收益率"""
+    start = (datetime.now() - timedelta(days=90)).strftime('%Y%m%d')
+    df = safe_call(ak.bond_zh_us_rate, start_date=start)
+    if df is not None:
+        return df.tail(30).to_dict(orient='records')
+    return []
+
+def fetch_fx():
+    """在岸人民币（中行牌价）"""
+    end = datetime.now().strftime('%Y%m%d')
+    start = (datetime.now() - timedelta(days=30)).strftime('%Y%m%d')
+    df = safe_call(ak.currency_boc_sina, symbol="美元", start_date=start, end_date=end)
+    if df is not None:
+        return df.tail(14).to_dict(orient='records')
+    return []
+
+def fetch_margin():
+    """沪深两融余额（历史7天）"""
+    end = datetime.now().strftime('%Y%m%d')
+    start = (datetime.now() - timedelta(days=14)).strftime('%Y%m%d')
+    data = {}
+    df = safe_call(ak.stock_margin_sse, start_date=start, end_date=end)
+    if df is not None:
+        data['sse'] = df.tail(7).to_dict(orient='records')
+    df = safe_call(ak.stock_margin_szse, start_date=start, end_date=end)
+    if df is not None:
+        data['szse'] = df.tail(7).to_dict(orient='records')
+    return data
+
+def fetch_commodities():
+    """黄金、原油主力"""
+    data = {}
+    df = safe_call(ak.futures_main_sina, symbol="AU0")
+    if df is not None:
+        data['gold'] = df.tail(30).to_dict(orient='records')
+    df = safe_call(ak.futures_main_sina, symbol="SC0")  # 原油(INE)
+    if df is not None:
+        data['oil'] = df.tail(30).to_dict(orient='records')
+    return data
+
+def fetch_if_cot():
+    """股指期货 IF 持仓（中信等多空单）"""
+    data = {}
+    for sym in ['IF', 'IH', 'IC']:
+        df = safe_call(ak.futures_cot_cffex, symbol=sym, indicator="持仓量")
+        if df is not None:
+            # 筛选中信期货
+            df['会员简称'] = df.get('会员简称', df.iloc[:,0]).astype(str)
+            citic = df[df['会员简称'].str.contains('中信')]
+            data[sym] = {
+                'all': df.head(20).to_dict(orient='records'),
+                'citic': citic.to_dict(orient='records'),
+            }
+    return data
+
+def fetch_repo_calendar():
+    """
+    央行逆回购：历史7天 + 未来14天到期日历
+    AkShare 无直接接口，预留自爬人民银行OMO公告位置
+    此处给出7天期逆回购到期推算逻辑框架
+    """
+    today = datetime.now().date()
+    calendar = []
+    # 假设已有历史操作记录 repo_history: [{date, amount, term_days}]
+    # 未来到期 = date + term_days
+    # 此处需结合自爬数据填充，示例留空结构
+    for i in range(-7, 15):
+        d = today + timedelta(days=i)
+        calendar.append({
+            'date': d.strftime('%Y-%m-%d'),
+            'type': 'past' if i < 0 else ('today' if i == 0 else 'future'),
+            'operation': None,   # 操作量（亿元），自爬填充
+            'maturity': None,    # 到期量（亿元），按 term 推算
+        })
+    return calendar
+
+def main():
+    print(f"=== 数据采集开始 {datetime.now()} ===")
+    snapshot = {
+        'update_time': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+        'macro_china': fetch_macro_china(),
+        'macro_usa': fetch_macro_usa(),
+        'rates': fetch_rates(),
+        'fx': fetch_fx(),
+        'margin': fetch_margin(),
+        'commodities': fetch_commodities(),
+        'if_cot': fetch_if_cot(),
+        'repo_calendar': fetch_repo_calendar(),
+    }
+
+    # 写入最新快照
+    latest_path = os.path.join(DATA_DIR, 'latest.json')
+    with open(latest_path, 'w', encoding='utf-8') as f:
+        json.dump(snapshot, f, ensure_ascii=False, default=str, indent=2)
+    print(f"已写入 {latest_path}")
+
+    # 写入历史归档（按日期）
+    hist_path = os.path.join(DATA_DIR, f"snapshot_{datetime.now().strftime('%Y%m%d')}.json")
+    with open(hist_path, 'w', encoding='utf-8') as f:
+        json.dump(snapshot, f, ensure_ascii=False, default=str, indent=2)
+
+    print("=== 采集完成 ===")
+
+if __name__ == '__main__':
+    main()
