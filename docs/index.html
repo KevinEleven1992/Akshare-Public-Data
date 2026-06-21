@@ -6,89 +6,289 @@
   <title>每日宏观数据看板</title>
   <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
   <style>
-    body { font-family: -apple-system, "PingFang SC", sans-serif; margin: 0; background: #f5f6fa; }
-    .header { background: #1a1a2e; color: #fff; padding: 20px; text-align: center; }
-    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 16px; }
-    .card { background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
-    .card h3 { margin: 0 0 8px; font-size: 16px; color: #333; border-left: 4px solid #1a73e8; padding-left: 8px; }
-    .chart { width: 100%; height: 240px; }
-    .update-time { color: #888; font-size: 13px; }
-    table { width: 100%; border-collapse: collapse; font-size: 13px; }
-    td, th { padding: 6px 8px; border-bottom: 1px solid #eee; text-align: center; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; background: #f0f2f5; }
+    .header { background: linear-gradient(135deg, #1a1a2e, #16213e); color: #fff; padding: 20px; text-align: center; position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+    .header h1 { font-size: 22px; margin-bottom: 4px; }
+    .update-time { font-size: 13px; opacity: 0.7; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+    .card { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); transition: transform 0.2s; }
+    .card:hover { transform: translateY(-2px); }
+    .card h3 { font-size: 15px; color: #333; border-left: 4px solid #1a73e8; padding-left: 10px; margin-bottom: 12px; }
+    .chart { width: 100%; height: 220px; }
+    table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    th { background: #f5f7fa; padding: 6px; text-align: center; color: #666; font-weight: 600; }
+    td { padding: 5px 6px; border-bottom: 1px solid #f0f0f0; text-align: center; }
+    .stat-row { display: flex; justify-content: space-around; padding: 10px 0; }
+    .stat-item { text-align: center; }
+    .stat-val { font-size: 24px; font-weight: bold; color: #1a73e8; }
+    .stat-label { font-size: 12px; color: #999; margin-top: 4px; }
+    .up { color: #e74c3c; }
+    .down { color: #27ae60; }
+    .loading { text-align: center; padding: 40px; color: #999; }
   </style>
 </head>
 <body>
   <div class="header">
-    <h1>每日宏观数据看板</h1>
+    <h1>📊 每日宏观数据看板</h1>
     <div class="update-time" id="updateTime">加载中...</div>
   </div>
   <div class="container">
-    <div class="grid">
-      <div class="card"><h3>央行逆回购日历(7天历史+14天到期)</h3><div id="repoCal"></div></div>
-      <div class="card"><h3>人民币汇率(CNY/CNH)</h3><div id="fxChart" class="chart"></div></div>
+    <div id="loadingMsg" class="loading">正在获取最新数据...</div>
+    <div class="grid" id="grid" style="display:none;">
+      <div class="card"><h3>央行逆回购日历 (7天历史 + 14天到期)</h3><div id="repoCal" style="max-height:280px;overflow-y:auto;"></div></div>
+      <div class="card"><h3>人民币汇率 (在岸/离岸)</h3><div id="fxChart" class="chart"></div></div>
       <div class="card"><h3>中信期货 IF 多空持仓</h3><div id="cotChart" class="chart"></div></div>
       <div class="card"><h3>A股两融余额</h3><div id="marginChart" class="chart"></div></div>
       <div class="card"><h3>中美国债收益率</h3><div id="rateChart" class="chart"></div></div>
-      <div class="card"><h3>黄金/原油</h3><div id="commChart" class="chart"></div></div>
-      <div class="card"><h3>中国 CPI/PPI/PMI</h3><div id="cnMacroChart" class="chart"></div></div>
-      <div class="card"><h3>美国 CPI/非农/失业率</h3><div id="usMacroChart" class="chart"></div></div>
-      <div class="card"><h3>中国 M1/M2 同比</h3><div id="moneyChart" class="chart"></div></div>
+      <div class="card"><h3>黄金 / 原油价格</h3><div id="commChart" class="chart"></div></div>
+      <div class="card"><h3>中国 CPI / PPI / PMI</h3><div id="cnMacroChart" class="chart"></div></div>
+      <div class="card"><h3>美国 CPI / 非农 / 失业率</h3><div id="usMacroChart" class="chart"></div></div>
+      <div class="card"><h3>中国 M1 / M2 同比</h3><div id="moneyChart" class="chart"></div></div>
+      <div class="card"><h3>沪深市场情绪</h3><div id="sentimentBox"></div></div>
+      <div class="card"><h3>中国 LPR 利率</h3><div id="lprChart" class="chart"></div></div>
     </div>
   </div>
 
 <script>
-const BASE = window.location.pathname.replace(/\/$/, '');
-fetch(`${BASE}/data/latest.json`)
-  .then(r => r.json())
+// 获取基础路径（适配 GitHub Pages 子路径）
+function getBase() {
+  let path = window.location.pathname;
+  // 去除文件名，保留目录
+  let base = path.substring(0, path.lastIndexOf('/') + 1);
+  return base;
+}
+
+const BASE = getBase();
+
+fetch(BASE + 'data/latest.json')
+  .then(r => {
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return r.json();
+  })
   .then(data => {
+    document.getElementById('loadingMsg').style.display = 'none';
+    document.getElementById('grid').style.display = 'grid';
     document.getElementById('updateTime').textContent = '更新时间: ' + data.update_time;
-    renderRepoCal(data.repo_calendar);
-    renderChart('fxChart', data.fx, '日期', '汇率');
-    renderChart('marginChart', data.margin.sse, '日期', '融资余额');
-    renderChart('rateChart', data.rates, '日期', '收益率');
-    renderChart('commChart', data.commodities.gold, '日期', '价格');
-    renderMoneyChart(data.macro_china.money_supply);
-    // 其余图表按需补充...
+    renderAll(data);
   })
   .catch(e => {
-    document.getElementById('updateTime').textContent = '加载失败: ' + e;
+    document.getElementById('loadingMsg').innerHTML = '❌ 加载失败: ' + e.message + '<br>请先手动触发一次 GitHub Actions 采集数据。';
   });
 
+function renderAll(data) {
+  renderRepoCal(data.repo_calendar);
+  renderFX(data.fx);
+  renderMargin(data.margin);
+  renderRates(data.rates);
+  renderComm(data.commodities);
+  renderCNMacro(data.macro_china);
+  renderUSMacro(data.macro_usa);
+  renderMoney(data.macro_china);
+  renderCOT(data.if_cot);
+  renderSentiment(data.sentiment);
+  renderLPR(data.macro_china);
+}
+
 function renderRepoCal(cal) {
+  if (!cal) return;
   let html = '<table><tr><th>日期</th><th>类型</th><th>操作(亿)</th><th>到期(亿)</th></tr>';
   cal.forEach(d => {
-    html += `<tr><td>${d.date}</td><td>${d.type}</td><td>${d.operation||'-'}</td><td>${d.maturity||'-'}</td></tr>`;
+    let bg = d.type === 'today' ? '#fff3cd' : (d.type === 'future' ? '#e8f5e9' : '#f8f9fa');
+    html += '<tr style="background:' + bg + '"><td>' + d.date + '</td><td>' + d.note + '</td><td>' + (d.operation || '-') + '</td><td>' + (d.maturity || '-') + '</td></tr>';
   });
   html += '</table>';
   document.getElementById('repoCal').innerHTML = html;
 }
 
-function renderChart(id, arr, xKey, yKey) {
-  if (!arr || !arr.length) return;
-  const chart = echarts.init(document.getElementById(id));
+function renderFX(fx) {
+  if (!fx || !fx.onshore) return;
+  const arr = fx.onshore;
+  const chart = echarts.init(document.getElementById('fxChart'));
+  // 找到价格列
+  let yKey = '中行折算价';
+  if (!arr[0].hasOwnProperty(yKey)) {
+    yKey = Object.keys(arr[0]).find(k => k.includes('价') || k.includes('率'));
+  }
   chart.setOption({
     tooltip: { trigger: 'axis' },
-    xAxis: { type: 'category', data: arr.map(r => r[xKey]) },
-    yAxis: { type: 'value' },
-    series: [{ type: 'line', smooth: true, data: arr.map(r => Object.values(r)[1]) }],
+    grid: { left: 50, right: 20, top: 20, bottom: 30 },
+    xAxis: { type: 'category', data: arr.map(r => r['日期'] || r[Object.keys(r)[0]]) },
+    yAxis: { type: 'value', scale: true },
+    series: [{ name: '在岸USD/CNY', type: 'line', smooth: true, data: arr.map(r => r[yKey]), itemStyle: { color: '#1a73e8' } }]
   });
 }
 
-function renderMoneyChart(arr) {
-  if (!arr) return;
-  const chart = echarts.init(document.getElementById('moneyChart'));
+function renderMargin(margin) {
+  if (!margin || !margin.sse) return;
+  const arr = margin.sse;
+  const chart = echarts.init(document.getElementById('marginChart'));
+  let yKey = Object.keys(arr[0]).find(k => k.includes('融资') && k.includes('余额'));
+  if (!yKey) yKey = Object.keys(arr[0]).find(k => k.includes('余额'));
   chart.setOption({
     tooltip: { trigger: 'axis' },
-    legend: { data: ['M2同比', 'M1同比'] },
-    xAxis: { type: 'category', data: arr.map(r => r['月份']) },
+    grid: { left: 60, right: 20, top: 20, bottom: 30 },
+    xAxis: { type: 'category', data: arr.map(r => r['日期'] || r[Object.keys(r)[0]]) },
     yAxis: { type: 'value' },
-    series: [
-      { name: 'M2同比', type: 'line', data: arr.map(r => r['M2同比']) },
-      { name: 'M1同比', type: 'line', data: arr.map(r => r['M1同比']) },
-    ],
+    series: [{ name: yKey, type: 'bar', data: arr.map(r => r[yKey]), itemStyle: { color: '#e8a735' } }]
   });
 }
+
+function renderRates(rates) {
+  if (!rates || !rates.length) return;
+  const chart = echarts.init(document.getElementById('rateChart'));
+  const keys = Object.keys(rates[0]).filter(k => k.includes('收益率') || k.includes('国债') || k.includes('rate') || k.includes('%'));
+  const xKey = Object.keys(rates[0])[0];
+  let series = [];
+  // 尝试找到数值列
+  let numKeys = [];
+  for (let k of Object.keys(rates[0])) {
+    if (typeof rates[0][k] === 'number') numKeys.push(k);
+  }
+  if (numKeys.length === 0) {
+    // 取第二列开始
+    numKeys = Object.keys(rates[0]).slice(1, 4);
+  }
+  numKeys.slice(0, 4).forEach(k => {
+    series.push({ name: k, type: 'line', smooth: true, data: rates.map(r => r[k]) });
+  });
+  chart.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { top: 0, textStyle: { fontSize: 10 } },
+    grid: { left: 50, right: 20, top: 30, bottom: 30 },
+    xAxis: { type: 'category', data: rates.map(r => r[xKey]) },
+    yAxis: { type: 'value', scale: true },
+    series: series
+  });
+}
+
+function renderComm(comm) {
+  if (!comm || !comm.gold) return;
+  const arr = comm.gold;
+  const chart = echarts.init(document.getElementById('commChart'));
+  let yKey = Object.keys(arr[0]).find(k => typeof arr[0][k] === 'number');
+  if (!yKey) yKey = '收盘';
+  chart.setOption({
+    tooltip: { trigger: 'axis' },
+    grid: { left: 50, right: 20, top: 20, bottom: 30 },
+    xAxis: { type: 'category', data: arr.map(r => r['日期'] || r[Object.keys(r)[0]]) },
+    yAxis: { type: 'value', scale: true },
+    series: [{ name: '黄金主力', type: 'line', smooth: true, data: arr.map(r => r[yKey]), itemStyle: { color: '#f1c40f' } }]
+  });
+}
+
+function renderCNMacro(macro) {
+  if (!macro || !macro.cpi) return;
+  const cpi = macro.cpi;
+  const chart = echarts.init(document.getElementById('cnMacroChart'));
+  let xKey = Object.keys(cpi[0])[0];
+  let numKeys = Object.keys(cpi[0]).filter(k => typeof cpi[0][k] === 'number').slice(0, 3);
+  let series = numKeys.map(k => ({ name: k, type: 'line', data: cpi.map(r => r[k]) }));
+  chart.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { top: 0, textStyle: { fontSize: 10 } },
+    grid: { left: 40, right: 20, top: 30, bottom: 30 },
+    xAxis: { type: 'category', data: cpi.map(r => r[xKey]) },
+    yAxis: { type: 'value' },
+    series: series
+  });
+}
+
+function renderUSMacro(macro) {
+  if (!macro || !macro.cpi) return;
+  const cpi = macro.cpi;
+  const chart = echarts.init(document.getElementById('usMacroChart'));
+  let xKey = Object.keys(cpi[0])[0];
+  let numKeys = Object.keys(cpi[0]).filter(k => typeof cpi[0][k] === 'number').slice(0, 3);
+  let series = numKeys.map(k => ({ name: k, type: 'line', data: cpi.map(r => r[k]) }));
+  chart.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { top: 0, textStyle: { fontSize: 10 } },
+    grid: { left: 40, right: 20, top: 30, bottom: 30 },
+    xAxis: { type: 'category', data: cpi.map(r => r[xKey]) },
+    yAxis: { type: 'value' },
+    series: series
+  });
+}
+
+function renderMoney(macro) {
+  if (!macro || !macro.money_supply) return;
+  const arr = macro.money_supply;
+  const chart = echarts.init(document.getElementById('moneyChart'));
+  let xKey = Object.keys(arr[0])[0];
+  let m1Key = Object.keys(arr[0]).find(k => k.includes('M1'));
+  let m2Key = Object.keys(arr[0]).find(k => k.includes('M2'));
+  let series = [];
+  if (m1Key) series.push({ name: 'M1', type: 'line', data: arr.map(r => r[m1Key]), itemStyle: { color: '#e74c3c' } });
+  if (m2Key) series.push({ name: 'M2', type: 'line', data: arr.map(r => r[m2Key]), itemStyle: { color: '#3498db' } });
+  chart.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { top: 0 },
+    grid: { left: 40, right: 20, top: 30, bottom: 30 },
+    xAxis: { type: 'category', data: arr.map(r => r[xKey]) },
+    yAxis: { type: 'value' },
+    series: series
+  });
+}
+
+function renderCOT(cot) {
+  if (!cot || !cot.IF || !cot.IF.all.length) return;
+  const arr = cot.IF.all;
+  const chart = echarts.init(document.getElementById('cotChart'));
+  let nameKey = Object.keys(arr[0]).find(k => typeof arr[0][k] === 'string');
+  let numKeys = Object.keys(arr[0]).filter(k => typeof arr[0][k] === 'number').slice(0, 2);
+  let series = numKeys.map(k => ({ name: k, type: 'bar', data: arr.map(r => r[k]) }));
+  chart.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { top: 0, textStyle: { fontSize: 10 } },
+    grid: { left: 50, right: 20, top: 30, bottom: 60 },
+    xAxis: { type: 'category', data: arr.map(r => r[nameKey]), axisLabel: { rotate: 45, fontSize: 10 } },
+    yAxis: { type: 'value' },
+    series: series
+  });
+}
+
+function renderSentiment(s) {
+  if (!s) return;
+  let html = '<div class="stat-row">';
+  if (s.breadth) {
+    let b = s.breadth;
+    html += '<div class="stat-item"><div class="stat-val up">' + b.up + '</div><div class="stat-label">上涨</div></div>';
+    html += '<div class="stat-item"><div class="stat-val down">' + b.down + '</div><div class="stat-label">下跌</div></div>';
+    html += '<div class="stat-item"><div class="stat-val">' + b.total + '</div><div class="stat-label">总数</div></div>';
+  }
+  if (s.turnover_median) {
+    html += '<div class="stat-item"><div class="stat-val">' + s.turnover_median + '%</div><div class="stat-label">换手中位数</div></div>';
+  }
+  html += '</div>';
+  document.getElementById('sentimentBox').innerHTML = html;
+}
+
+function renderLPR(macro) {
+  if (!macro || !macro.lpr) return;
+  const arr = macro.lpr;
+  const chart = echarts.init(document.getElementById('lprChart'));
+  let xKey = Object.keys(arr[0])[0];
+  let numKeys = Object.keys(arr[0]).filter(k => typeof arr[0][k] === 'number').slice(0, 3);
+  let series = numKeys.map(k => ({ name: k, type: 'line', data: arr.map(r => r[k]), smooth: true }));
+  chart.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { top: 0, textStyle: { fontSize: 10 } },
+    grid: { left: 40, right: 20, top: 30, bottom: 30 },
+    xAxis: { type: 'category', data: arr.map(r => r[xKey]) },
+    yAxis: { type: 'value', scale: true },
+    series: series
+  });
+}
+
+// 窗口大小变化时重绘图表
+window.addEventListener('resize', () => {
+  document.querySelectorAll('.chart').forEach(el => {
+    let inst = echarts.getInstanceByDom(el);
+    if (inst) inst.resize();
+  });
+});
 </script>
 </body>
 </html>
