@@ -1,40 +1,44 @@
-name: Daily Finance Data Update
-
-# 🚨 新增：显式声明需要写入仓库内容的权限
-permissions:
-  contents: write
+name: 每日宏观数据更新
 
 on:
   schedule:
-    # 北京时间 20:30 = UTC 12:30
-    - cron: '30 12 * * *' 
-  workflow_dispatch: 
+    # 北京时间 21:00 = UTC 13:00
+    - cron: '0 13 * * *'
+  workflow_dispatch:  # 手动触发，便于调试
+
+permissions:
+  contents: write
 
 jobs:
-  build-and-deploy:
+  fetch-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Repository
-        # 建议升级到 v4，对权限的支持更好
-        uses: actions/checkout@v4 
+      - name: 检出代码
+        uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: 配置 Python
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
-      - name: Install Dependencies
+      - name: 安装依赖
         run: |
-          python -m pip install --upgrade pip
-          pip install akshare yfinance pandas
+          pip install akshare pandas --upgrade
 
-      - name: Fetch Latest Data
-        run: python fetch_data.py
-
-      - name: Commit and Push Data
+      - name: 运行采集脚本
         run: |
-          git config --global user.name 'github-actions[bot]'
-          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
-          git add docs/data.json
-          # 如果有更改才提交，避免空提交报错
-          git diff --quiet && git diff --staged --quiet || (git commit -m "🤖 Auto-Update Data [skip ci]" && git push)
+          python scripts/fetch_data.py
+
+      - name: 提交并推送数据
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/data/
+          git commit -m "chore: update macro data $(date -u +'%Y-%m-%d 21:00 BJT')" || echo "no changes"
+          git push
+
+      - name: 部署到 GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs
