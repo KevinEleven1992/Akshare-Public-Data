@@ -1,111 +1,94 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全球宏观与A股情绪看板</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
-        .card { transition: all 0.3s ease; }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>每日宏观数据看板</title>
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+  <style>
+    body { font-family: -apple-system, "PingFang SC", sans-serif; margin: 0; background: #f5f6fa; }
+    .header { background: #1a1a2e; color: #fff; padding: 20px; text-align: center; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 16px; }
+    .card { background: #fff; border-radius: 8px; padding: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+    .card h3 { margin: 0 0 8px; font-size: 16px; color: #333; border-left: 4px solid #1a73e8; padding-left: 8px; }
+    .chart { width: 100%; height: 240px; }
+    .update-time { color: #888; font-size: 13px; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    td, th { padding: 6px 8px; border-bottom: 1px solid #eee; text-align: center; }
+  </style>
 </head>
-<body class="text-slate-800 p-4 md:p-8">
-    <div class="max-w-7xl mx-auto">
-        <header class="mb-8 text-center">
-            <h1 class="text-3xl font-bold text-slate-900 mb-2">📊 每日金融数据看板</h1>
-            <p id="update-time" class="text-slate-500 text-sm">正在加载数据...</p>
-        </header>
-
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="dashboard">
-            <!-- 数据卡片将通过 JS 动态注入 -->
-        </div>
+<body>
+  <div class="header">
+    <h1>每日宏观数据看板</h1>
+    <div class="update-time" id="updateTime">加载中...</div>
+  </div>
+  <div class="container">
+    <div class="grid">
+      <div class="card"><h3>央行逆回购日历(7天历史+14天到期)</h3><div id="repoCal"></div></div>
+      <div class="card"><h3>人民币汇率(CNY/CNH)</h3><div id="fxChart" class="chart"></div></div>
+      <div class="card"><h3>中信期货 IF 多空持仓</h3><div id="cotChart" class="chart"></div></div>
+      <div class="card"><h3>A股两融余额</h3><div id="marginChart" class="chart"></div></div>
+      <div class="card"><h3>中美国债收益率</h3><div id="rateChart" class="chart"></div></div>
+      <div class="card"><h3>黄金/原油</h3><div id="commChart" class="chart"></div></div>
+      <div class="card"><h3>中国 CPI/PPI/PMI</h3><div id="cnMacroChart" class="chart"></div></div>
+      <div class="card"><h3>美国 CPI/非农/失业率</h3><div id="usMacroChart" class="chart"></div></div>
+      <div class="card"><h3>中国 M1/M2 同比</h3><div id="moneyChart" class="chart"></div></div>
     </div>
+  </div>
 
-    <script>
-        async function loadData() {
-            try {
-                const response = await fetch('data.json');
-                const data = await response.json();
-                document.getElementById('update-time').innerText = `数据更新时间: ${data.update_time}`;
-                renderDashboard(data);
-            } catch (error) {
-                console.error('Error loading data:', error);
-                document.getElementById('dashboard').innerHTML = '<p class="text-red-500">数据加载失败，请检查 data.json</p>';
-            }
-        }
+<script>
+const BASE = window.location.pathname.replace(/\/$/, '');
+fetch(`${BASE}/data/latest.json`)
+  .then(r => r.json())
+  .then(data => {
+    document.getElementById('updateTime').textContent = '更新时间: ' + data.update_time;
+    renderRepoCal(data.repo_calendar);
+    renderChart('fxChart', data.fx, '日期', '汇率');
+    renderChart('marginChart', data.margin.sse, '日期', '融资余额');
+    renderChart('rateChart', data.rates, '日期', '收益率');
+    renderChart('commChart', data.commodities.gold, '日期', '价格');
+    renderMoneyChart(data.macro_china.money_supply);
+    // 其余图表按需补充...
+  })
+  .catch(e => {
+    document.getElementById('updateTime').textContent = '加载失败: ' + e;
+  });
 
-        function createCard(title, content) {
-            return `
-                <div class="card bg-white p-6 rounded-xl shadow-sm border border-slate-100">
-                    <h3 class="font-bold text-lg mb-4 text-blue-600 border-b pb-2">${title}</h3>
-                    <div class="space-y-3 text-sm">${content}</div>
-                </div>
-            `;
-        }
+function renderRepoCal(cal) {
+  let html = '<table><tr><th>日期</th><th>类型</th><th>操作(亿)</th><th>到期(亿)</th></tr>';
+  cal.forEach(d => {
+    html += `<tr><td>${d.date}</td><td>${d.type}</td><td>${d.operation||'-'}</td><td>${d.maturity||'-'}</td></tr>`;
+  });
+  html += '</table>';
+  document.getElementById('repoCal').innerHTML = html;
+}
 
-        function renderDashboard(data) {
-            const grid = document.getElementById('dashboard');
-            let html = '';
+function renderChart(id, arr, xKey, yKey) {
+  if (!arr || !arr.length) return;
+  const chart = echarts.init(document.getElementById(id));
+  chart.setOption({
+    tooltip: { trigger: 'axis' },
+    xAxis: { type: 'category', data: arr.map(r => r[xKey]) },
+    yAxis: { type: 'value' },
+    series: [{ type: 'line', smooth: true, data: arr.map(r => Object.values(r)[1]) }],
+  });
+}
 
-            // 1. 汇率 & 大宗
-            html += createCard('💱 汇率 & 大宗商品', `
-                <div class="flex justify-between"><span>USD/CNY (在岸):</span> <span class="font-mono font-bold">${data.fx.CNY || 'N/A'}</span></div>
-                <div class="flex justify-between"><span>USD/CNH (离岸):</span> <span class="font-mono font-bold">${data.fx.CNH || 'N/A'}</span></div>
-                <hr class="my-2">
-                <div class="flex justify-between"><span>COMEX黄金:</span> <span class="font-mono font-bold text-yellow-600">$${data.commodities.Gold || 'N/A'}</span></div>
-                <div class="flex justify-between"><span>WTI原油:</span> <span class="font-mono font-bold text-slate-700">$${data.commodities.Oil || 'N/A'}</span></div>
-            `);
-
-            // 2. 中美利率
-            html += createCard('📈 中美5年期国债收益率', `
-                <div class="flex justify-between"><span>🇨🇳 中国 5Y:</span> <span class="font-bold">${data.rates.CN_5Y || 'N/A'}%</span></div>
-                <div class="flex justify-between"><span>🇺🇸 美国 5Y:</span> <span class="font-bold">${data.rates.US_5Y || 'N/A'}%</span></div>
-                <p class="text-xs text-slate-400 mt-2">*中美利差是判断外资流向的重要指标</p>
-            `);
-
-            // 3. 情绪指标 (北向资金)
-            const north = data.sentiment.north_flow ? data.sentiment.north_flow[0] : {};
-            html += createCard('🔥 市场情绪 (北向资金)', `
-                <div class="text-center p-4 bg-slate-50 rounded-lg">
-                    <p class="text-slate-500 text-xs">最新净流入 (亿元)</p>
-                    <p class="text-2xl font-bold ${north.value > 0 ? 'text-red-500' : 'text-green-500'}">${north.value || 'N/A'}</p>
-                </div>
-                <p class="text-xs text-slate-400 mt-2 text-center">*北向资金常被视为外资"聪明钱"情绪指标</p>
-            `);
-
-            // 4. 宏观数据 (CPI/PMI)
-            html += createCard('🌍 中美核心宏观数据', `
-                <div class="grid grid-cols-2 gap-4">
-                    <div><p class="text-slate-500 text-xs">🇨🇳 CPI (同比)</p><p class="font-bold">${data.macro_cn.CPI || 'N/A'}%</p></div>
-                    <div><p class="text-slate-500 text-xs">🇨🇳 PMI</p><p class="font-bold">${data.macro_cn.PMI || 'N/A'}</p></div>
-                    <div><p class="text-slate-500 text-xs">🇺🇸 CPI (同比)</p><p class="font-bold">${data.macro_us.CPI || 'N/A'}%</p></div>
-                    <div><p class="text-slate-500 text-xs">🇺🇸 PMI</p><p class="font-bold">${data.macro_us.PMI || 'N/A'}</p></div>
-                </div>
-            `);
-
-            // 5. A股两融余额
-            html += createCard('💰 A股两融余额 (杠杆资金)', `
-                <div class="text-center p-4">
-                    <p class="text-2xl font-bold text-blue-600">${data.margin.Total ? (data.margin.Total / 100000000).toFixed(2) + ' 亿' : 'N/A'}</p>
-                    <p class="text-xs text-slate-400">反映内资杠杆情绪</p>
-                </div>
-            `);
-
-            // 6. 央行逆回购 (近期摘要)
-            const pbcLatest = data.pbc && data.pbc.length > 0 ? data.pbc[0] : {};
-            html += createCard('🏦 央行公开市场操作', `
-                <div class="flex justify-between"><span>最新日期:</span> <span>${pbcLatest.date || 'N/A'}</span></div>
-                <div class="flex justify-between"><span>净投放:</span> <span class="font-bold ${pbcLatest.net > 0 ? 'text-red-500' : 'text-green-500'}">${pbcLatest.net || 0} 亿</span></div>
-                <p class="text-xs text-slate-400 mt-2">*数据包含历史7天及未来14天到期测算</p>
-            `);
-
-            grid.innerHTML = html;
-        }
-
-        // 初始化加载
-        loadData();
-    </script>
+function renderMoneyChart(arr) {
+  if (!arr) return;
+  const chart = echarts.init(document.getElementById('moneyChart'));
+  chart.setOption({
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['M2同比', 'M1同比'] },
+    xAxis: { type: 'category', data: arr.map(r => r['月份']) },
+    yAxis: { type: 'value' },
+    series: [
+      { name: 'M2同比', type: 'line', data: arr.map(r => r['M2同比']) },
+      { name: 'M1同比', type: 'line', data: arr.map(r => r['M1同比']) },
+    ],
+  });
+}
+</script>
 </body>
 </html>
