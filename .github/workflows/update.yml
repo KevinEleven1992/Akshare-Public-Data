@@ -4,7 +4,7 @@ on:
   schedule:
     # 北京时间 21:00 = UTC 13:00
     - cron: '0 13 * * *'
-  workflow_dispatch:  # 手动触发，便于调试
+  workflow_dispatch:  # 手动触发，用于调试
 
 permissions:
   contents: write
@@ -16,6 +16,13 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v4
 
+      - name: 列出文件结构（调试用）
+        run: |
+          echo "=== 当前目录结构 ==="
+          find . -not -path './.git/*' -type f
+          echo "=== 确认 fetch_data.py 存在 ==="
+          ls -la scripts/fetch_data.py || echo "ERROR: scripts/fetch_data.py not found!"
+
       - name: 配置 Python
         uses: actions/setup-python@v5
         with:
@@ -23,18 +30,26 @@ jobs:
 
       - name: 安装依赖
         run: |
+          python -m pip install --upgrade pip
           pip install akshare pandas --upgrade
 
       - name: 运行采集脚本
         run: |
           python scripts/fetch_data.py
 
+      - name: 确认数据文件已生成
+        run: |
+          echo "=== docs/data 目录内容 ==="
+          ls -la docs/data/ || echo "No data dir"
+          echo "=== latest.json 前100字符 ==="
+          head -c 100 docs/data/latest.json || echo "No latest.json"
+
       - name: 提交并推送数据
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add docs/data/
-          git commit -m "chore: update macro data $(date -u +'%Y-%m-%d 21:00 BJT')" || echo "no changes"
+          git commit -m "data: update $(date -u +'%Y-%m-%d')" || echo "No changes to commit"
           git push
 
       - name: 部署到 GitHub Pages
