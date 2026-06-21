@@ -1,18 +1,22 @@
 name: Daily Finance Data Update
 
+# 🚨 新增：显式声明需要写入仓库内容的权限
+permissions:
+  contents: write
+
 on:
   schedule:
-    # Cron 表达式使用 UTC 时间。北京时间 20:30 = UTC 12:30
-    # 预留半小时给数据抓取和部署，确保21:00准时上线最新数据
+    # 北京时间 20:30 = UTC 12:30
     - cron: '30 12 * * *' 
-  workflow_dispatch: # 允许手动在 GitHub 页面点击按钮触发运行
+  workflow_dispatch: 
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        # 建议升级到 v4，对权限的支持更好
+        uses: actions/checkout@v4 
 
       - name: Set up Python
         uses: actions/setup-python@v4
