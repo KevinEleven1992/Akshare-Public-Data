@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全球宏观与金融市场全景看板</title>
+    <style>
+        :root { --bg-color: #f8f9fa; --card-bg: #ffffff; --text-main: #212529; --primary: #0d6efd; --border: #e9ecef; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-color); color: var(--text-main); margin: 0; padding: 24px; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
+        .card { background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid var(--border); }
+        .card h3 { margin-top: 0; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+        table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
+        th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); }
+        th { background: #fdfdfd; font-weight: 600; }
+        .metric-value { font-size: 24px; font-weight: bold; color: #dc3545; margin: 10px 0; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2>📊 全球宏观与市场数据全景看板</h2>
+        <div>⏰ 数据更新时间 (每日21点): <strong id="update-time">-</strong></div>
+    </div>
+
+    <div class="grid">
+        <div class="card">
+            <h3>💱 实时汇率 & 市场情绪</h3>
+            <div>在岸人民币 (USDCNY): <span id="onshore" class="metric-value">-</span></div>
+            <div>离岸人民币 (USDCNH): <span id="offshore" class="metric-value">-</span></div>
+            <div style="margin-top:15px;">A股恐慌贪婪指数: <strong id="fear-greed">-</strong></div>
+        </div>
+
+        <div class="card">
+            <h3>🏆 金融锚（利率与大宗）</h3>
+            <div>中国 5年期 LPR: <strong id="cn-lpr">-</strong></div>
+            <div>美债 10年期收益率: <strong id="us-bond">-</strong></div>
+            <hr style="border:0; border-top:1px solid var(--border); margin:15px 0;">
+            <div>国内黄金主力: <strong id="gold-price">-</strong> 元/克</div>
+            <div>国内原油主力: <strong id="oil-price">-</strong> 元/桶</div>
+        </div>
+
+        <div class="card">
+            <h3>📈 杠杆资金（两融余额）</h3>
+            <div id="margin-date" style="font-size:12px; color:#6c757d;"></div>
+            <div id="margin-val" class="metric-value">-</div>
+        </div>
+    </div>
+
+    <h3 style="margin-top:40px;">📅 核心日历与龙虎榜数据</h3>
+    <div class="grid">
+        <div class="card">
+            <h3>🇨🇳 央行公开市场操作日历</h3>
+            <table id="omo-table"><tr><td>正在加载中...</td></tr></table>
+        </div>
+        <div class="card">
+            <h3>🔓 A股非ST主板解禁预告</h3>
+            <table id="unlock-table"><tr><td>正在加载中...</td></tr></table>
+        </div>
+        <div class="card">
+            <h3>⚡ 中信期货主力持仓 (IF)</h3>
+            <table id="futures-table"><tr><td>正在加载中...</td></tr></table>
+        </div>
+    </div>
+
+    <script>
+        const safeGet = (obj, path, fallback = "-") => {
+            return path.split('.').reduce((acc, part) => acc && acc[part] !== undefined ? acc[part] : null, obj) || fallback;
+        };
+
+        fetch('data.json?v=' + new Date().getTime())
+            .then(res => res.json())
+            .then(data => {
+                document.getElementById('update-time').innerText = safeGet(data, 'update_time');
+                
+                // 汇率与情绪展示
+                document.getElementById('onshore').innerText = safeGet(data, 'exchange_rate.USDCNY_Onshore');
+                document.getElementById('offshore').innerText = safeGet(data, 'exchange_rate.USDCNH_Offshore');
+                
+                const fg = safeGet(data, 'macro_metrics.fear_greed');
+                if(fg !== "-") document.getElementById('fear-greed').innerText = `指数值: ${fg.value || '-'} (${fg.sentiment || '-'})`;
+
+                // 利率大宗
+                document.getElementById('cn-lpr').innerText = safeGet(data, 'macro_metrics.interest_rate.china_lpr_5y') + "%";
+                document.getElementById('us-bond').innerText = safeGet(data, 'macro_metrics.interest_rate.us_bond_10y') + "%";
+                document.getElementById('gold-price').innerText = safeGet(data, 'macro_metrics.commodity.gold');
+                document.getElementById('oil-price').innerText = safeGet(data, 'macro_metrics.commodity.oil');
+
+                // 两融
+                document.getElementById('margin-date').innerText = "统计日期: " + safeGet(data, 'macro_metrics.margin_balance.日期');
+                const mVal = safeGet(data, 'macro_metrics.margin_balance.融资融券余额');
+                document.getElementById('margin-val').innerText = mVal !== "-" ? (mVal / 100000000).toFixed(2) + " 亿元" : "-";
+
+                // 渲染OMO日历
+                const omo = safeGet(data, 'pboc_omo.history_7d');
+                if(Array.isArray(omo)) {
+                    let html = "<tr><th>日期</th><th>方向</th><th>操作量</th><th>利率</th></tr>";
+                    omo.forEach(r => {
+                        html += `<tr><td>${r.发布日期 || r.日期 || '-'}</td><td>${r.操作种类 || r.交易方向 || '-'}</td><td>${r['操作量'] || r['交易量(亿)'] || '-'}</td><td>${r['中标利率'] || r['利率(%)'] || '-'}</td></tr>`;
+                    });
+                    document.getElementById('omo-table').innerHTML = html;
+                }
+
+                // 渲染解禁
+                const unl = safeGet(data, 'unlock_calendar');
+                if(Array.isArray(unl)) {
+                    let html = "<tr><th>解禁时间</th><th>代码</th><th>简称</th><th>数量</th></tr>";
+                    unl.forEach(r => {
+                        html += `<tr><td>${r.解禁时间}</td><td>${r.股票代码}</td><td>${r.股票简称}</td><td>${(r['解禁数量(股)']/10000).toFixed(0)}万股</td></tr>`;
+                    });
+                    document.getElementById('unlock-table').innerHTML = html;
+                }
+
+                // 渲染期货持仓
+                const fut = safeGet(data, 'citic_futures');
+                if(Array.isArray(fut)) {
+                    let html = "<tr><th>名次</th><th>多单机构</th><th>多单量</th><th>空单机构</th><th>空单量</th></tr>";
+                    fut.forEach(r => {
+                        html += `<tr><td>${r.名次}</td><td>${r.多头持仓机构名称||'-'}</td><td>${r.多头持仓量||'-'}</td><td>${r.空头持仓机构名称||'-'}</td><td>${r.空头持仓量||'-'}</td></tr>`;
+                    });
+                    document.getElementById('futures-table').innerHTML = html;
+                }
+            })
+            .catch(err => console.error("读取看板数据失败:", err));
+    </script>
+</body>
+</html>
