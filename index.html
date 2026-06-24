@@ -3,69 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>全球宏观与金融市场全景看板</title>
+    <title>高级量化宏观与流动性日历全景看板</title>
     <style>
-        :root { --bg-color: #f8f9fa; --card-bg: #ffffff; --text-main: #212529; --primary: #0d6efd; --border: #e9ecef; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg-color); color: var(--text-main); margin: 0; padding: 24px; }
+        :root { --bg-color: #f4f6f9; --card-bg: #ffffff; --text-main: #2b303a; --primary: #1a73e8; --border: #e2e8f0; --success: #2ec4b6; --danger: #e71d36; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif; background: var(--bg-color); color: var(--text-main); margin: 0; padding: 24px; }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(350px, 1fr)); gap: 20px; }
-        .card { background: var(--card-bg); border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.02); border: 1px solid var(--border); }
-        .card h3 { margin-top: 0; color: var(--primary); border-bottom: 1px solid var(--border); padding-bottom: 8px; }
-        table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 10px; }
-        th, td { padding: 10px; text-align: left; border-bottom: 1px solid var(--border); }
-        th { background: #fdfdfd; font-weight: 600; }
-        .metric-value { font-size: 24px; font-weight: bold; color: #dc3545; margin: 10px 0; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
+        .card { background: var(--card-bg); border-radius: 14px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid var(--border); }
+        .card h3 { margin-top: 0; color: var(--primary); font-size: 18px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; }
+        .full-width { grid-column: 1 / -1; }
+        .sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media(max-width: 768px) { .sub-grid { grid-template-columns: 1fr; } }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+        th, td { padding: 12px 10px; border-bottom: 1px solid var(--border); }
+        th { background: #fafbfc; font-weight: 600; color: #5a6275; }
+        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; color:#fff; }
+        .badge-up { background-color: var(--success); }
+        .badge-down { background-color: var(--danger); }
+        .metric-group { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; }
+        .metric-value { font-size: 26px; font-weight: 800; color: #1e293b; margin: 8px 0; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>📊 全球宏观与市场数据全景看板</h2>
-        <div>⏰ 数据更新时间: <strong id="update-time">-</strong></div>
+        <h2>📊 宏观深度策略与流动性全景看板 (2.0 Pro)</h2>
+        <div>系统最后同步: <strong id="update-time" style="color:var(--primary);">-</strong></div>
     </div>
 
     <div class="grid">
         <div class="card">
-            <h3>💱 实时汇率 & 市场情绪</h3>
-            <div>美元/人民币 (USDCNY): <span id="onshore" class="metric-value">-</span></div>
-            <div>美元/离岸离岸 (USDCNH): <span id="offshore" class="metric-value">-</span></div>
-            <div style="margin-top:15px;">A股赚钱效应多头指数: <strong id="fear-greed">-</strong></div>
+            <h3>💱 核心汇率与广义情绪</h3>
+            <div class="metric-group"><span>在岸人民币 (USD/CNY):</span><strong id="onshore">-</strong></div>
+            <div class="metric-group"><span>离岸人民币 (USD/CNH):</span><strong id="offshore">-</strong></div>
+            <div style="margin-top:16px; padding:12px; background:#f8fafc; border-radius:8px;">
+                <span>A股多头赚钱效应脉冲指数:</span>
+                <div id="fear-greed" style="font-size:20px; font-weight:bold; color:var(--danger); margin-top:4px;">-</div>
+            </div>
         </div>
 
         <div class="card">
-            <h3>🏆 金融锚（利率与大宗）</h3>
-            <div>中国 5年期 LPR: <strong id="cn-lpr">-</strong></div>
-            <div>美债 10年期收益率: <strong id="us-bond">-</strong></div>
-            <hr style="border:0; border-top:1px solid var(--border); margin:15px 0;">
-            <div>全球黄金主力: <strong id="gold-price">-</strong></div>
-            <div>国际原油主力: <strong id="oil-price">-</strong></div>
+            <h3>🏦 中美基准金锚</h3>
+            <div class="metric-group"><span>中国 5年期 LPR 利率:</span><strong id="cn-lpr" style="color:var(--danger); font-weight:bold;">-</strong></div>
+            <div class="metric-group"><span>10年期美国国债收益率:</span><strong id="us-bond">-</strong></div>
+            <div class="metric-group" style="margin-top:20px;"><span>国际黄金连续:</span><span id="gold-price">-</span></div>
+            <div class="metric-group"><span>WTI 原油连续:</span><span id="oil-price">-</span></div>
         </div>
 
         <div class="card">
-            <h3>📈 杠杆资金（两融余额）</h3>
-            <div id="margin-date" style="font-size:12px; color:#6c757d;">统计日期: -</div>
+            <h3>📈 广义杠杆信用能力</h3>
+            <div id="margin-date" style="font-size:12px; color:#64748b; margin-bottom:4px;">两融数据截至: -</div>
             <div id="margin-val" class="metric-value">-</div>
+            <div style="font-size:12px; color:#94a3b8;">代表场内活跃长线高杠杆游资深度风险偏好。</div>
         </div>
-    </div>
 
-    <h3 style="margin-top:40px;">📅 核心日历与主力持仓数据</h3>
-    <div class="grid">
-        <div class="card">
-            <h3>🇨🇳 央行公开市场操作日历</h3>
-            <table id="omo-table"><tr><td>正在加载最新全景日历...</td></tr></table>
+        <div class="card full-width">
+            <h3>🌍 全球核心宏观周期动能追踪</h3>
+            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:15px; text-align:center;">
+                <div style="background:#fff; border:1px solid var(--border); padding:12px; border-radius:8px;">
+                    <div style="color:#64748b; font-size:12px;">中国 CPI (同比)</div>
+                    <div id="c-cpi" style="font-size:18px; font-weight:bold; margin-top:6px; color:var(--primary);">-</div>
+                </div>
+                <div style="background:#fff; border:1px solid var(--border); padding:12px; border-radius:8px;">
+                    <div style="color:#64748b; font-size:12px;">中国 PPI (同比)</div>
+                    <div id="c-ppi" style="font-size:18px; font-weight:bold; margin-top:6px;">-</div>
+                </div>
+                <div style="background:#fff; border:1px solid var(--border); padding:12px; border-radius:8px;">
+                    <div style="color:#64748b; font-size:12px;">中国 制造业PMI</div>
+                    <div id="c-pmi" style="font-size:18px; font-weight:bold; margin-top:6px;">-</div>
+                </div>
+                <div style="background:#fff; border:1px solid var(--border); padding:12px; border-radius:8px;">
+                    <div style="color:#64748b; font-size:12px;">美国 核心CPI</div>
+                    <div id="u-cpi" style="font-size:18px; font-weight:bold; margin-top:6px; color:var(--danger);">-</div>
+                </div>
+                <div style="background:#fff; border:1px solid var(--border); padding:12px; border-radius:8px;">
+                    <div style="color:#64748b; font-size:12px;">美国 制造业PMI</div>
+                    <div id="u-pmi" style="font-size:18px; font-weight:bold; margin-top:6px;">-</div>
+                </div>
+            </div>
         </div>
-        <div class="card">
-            <h3>🔓 A股非ST主板解禁预告</h3>
-            <table id="unlock-table"><tr><td>正在加载最新解禁日程...</td></tr></table>
+
+        <div class="card full-width">
+            <h3>🇨🇳 央行公开市场操作工具箱 (OMO) 深度对冲全景日历</h3>
+            <div class="sub-grid">
+                <div>
+                    <h4 style="margin:0 0 10px 0; font-size:14px; color:#475569;">👇 当前日期及历史近期逆回购投放记录</h4>
+                    <table id="omo-hist-table"><tr><td>正在安全链接公开接口...</td></tr></table>
+                </div>
+                <div>
+                    <h4 style="margin:0 0 10px 0; font-size:14px; color:#475569;">🔮 未来 14 天内即将到期的逆回购流出日历表</h4>
+                    <table id="omo-future-table"><tr><td>正在计算到期对冲规模...</td></tr></table>
+                </div>
+            </div>
         </div>
+
         <div class="card">
-            <h3>⚡ 中信期货主力持仓 (IF)</h3>
-            <table id="futures-table"><tr><td>正在加载中信持仓龙虎榜...</td></tr></table>
+            <h3>🔓 核心主板非ST大规模解禁日程</h3>
+            <table id="unlock-table"><tr><td>拉取核心持仓到期日历...</td></tr></table>
+        </div>
+
+        <div class="card">
+            <h3>⚡ 中信期货主力持仓机构多空对垒龙虎榜 (IF连续)</h3>
+            <table id="futures-table"><tr><td>动态追溯最新结算持仓中...</td></tr></table>
         </div>
     </div>
 
     <script>
-        // 高鲁棒性安全路径解构器
         const safeGet = (obj, path, fallback = "-") => {
             return path.split('.').reduce((acc, part) => (acc && acc[part] !== undefined && acc[part] !== null) ? acc[part] : null, obj) || fallback;
         };
@@ -75,63 +118,67 @@
             .then(data => {
                 document.getElementById('update-time').innerText = safeGet(data, 'update_time');
                 
-                // 1. 汇率与市场情绪
+                // 基础面板
                 document.getElementById('onshore').innerText = safeGet(data, 'exchange_rate.USDCNY_Onshore');
                 document.getElementById('offshore').innerText = safeGet(data, 'exchange_rate.USDCNH_Offshore');
-                
-                const fgValue = safeGet(data, 'macro_metrics.fear_greed.value');
-                const fgSentiment = safeGet(data, 'macro_metrics.fear_greed.sentiment');
-                document.getElementById('fear-greed').innerText = `${fgValue} (${fgSentiment})`;
-
-                // 2. 利率与全球大宗
+                document.getElementById('fear-greed').innerText = `${safeGet(data, 'macro_metrics.fear_greed.value')}% (${safeGet(data, 'macro_metrics.fear_greed.sentiment')})`;
                 document.getElementById('cn-lpr').innerText = safeGet(data, 'macro_metrics.interest_rate.china_lpr_5y');
                 document.getElementById('us-bond').innerText = safeGet(data, 'macro_metrics.interest_rate.us_bond_10y');
                 document.getElementById('gold-price').innerText = safeGet(data, 'macro_metrics.commodity.gold');
                 document.getElementById('oil-price').innerText = safeGet(data, 'macro_metrics.commodity.oil');
-
-                // 3. 杠杆两融资金
-                document.getElementById('margin-date').innerText = "统计日期: " + safeGet(data, 'macro_metrics.margin_balance.date');
+                document.getElementById('margin-date').innerText = "两融数据截至: " + safeGet(data, 'macro_metrics.margin_balance.date');
                 document.getElementById('margin-val').innerText = safeGet(data, 'macro_metrics.margin_balance.value');
 
-                // 4. 渲染央行 OMO 表格 (全面切换至归一化英文 Key)
-                const omoList = safeGet(data, 'pboc_omo.history_7d');
-                if(Array.isArray(omoList) && omoList.length > 0) {
-                    let html = "<tr><th>操作日期</th><th>操作方向</th><th>操作量</th><th>中标利率</th></tr>";
-                    omoList.forEach(r => {
-                        html += `<tr><td>${r.date}</td><td>${r.direction}</td><td>${r.amount}</td><td>${r.rate}</td></tr>`;
+                // 宏观矩阵
+                document.getElementById('c-cpi').innerText = safeGet(data, 'macro_metrics.china_cpi') + "%";
+                document.getElementById('c-ppi').innerText = safeGet(data, 'macro_metrics.china_ppi') + "%";
+                document.getElementById('c-pmi').innerText = safeGet(data, 'macro_metrics.china_pmi');
+                document.getElementById('u-cpi').innerText = safeGet(data, 'macro_metrics.usa_cpi');
+                document.getElementById('u-pmi').innerText = safeGet(data, 'macro_metrics.usa_pmi');
+
+                // 渲染 OMO 历史投放表
+                const histList = safeGet(data, 'pboc_omo.history_7d');
+                if(Array.isArray(histList) && histList.length > 0) {
+                    let html = "<tr><th>投放操作日</th><th>方向</th><th>操作量</th><th>中标利率</th></tr>";
+                    histList.slice(0, 7).forEach(r => {
+                        const isUp = r.direction.includes("投放") || r.direction.includes("买入");
+                        const badgeClass = isUp ? "badge badge-up" : "badge badge-down";
+                        html += `<tr><td><strong>${r.date}</strong></td><td><span class="${badgeClass}">${r.direction}</span></td><td>font-weight:bold;${r.amount}</td><td>${r.rate}</td></tr>`;
                     });
-                    document.getElementById('omo-table').innerHTML = html;
-                } else {
-                    document.getElementById('omo-table').innerHTML = "<tr><td>暂无近期公开市场操作数据</td></tr>";
+                    document.getElementById('omo-hist-table').innerHTML = html;
                 }
 
-                // 5. 渲染 A股主板解禁
+                // 渲染 OMO 未来 14 天到期流动性日历表
+                const futureList = safeGet(data, 'pboc_omo.future_14d');
+                if(Array.isArray(futureList) && futureList.length > 0) {
+                    let html = "<tr><th>到期清算日</th><th>方向</th><th>回笼规模</th><th>利率参考</th></tr>";
+                    futureList.forEach(r => {
+                        html += `<tr><td><strong>${r.date}</strong></td><td><span class="badge badge-down">${r.direction}</span></td><td style="color:var(--danger); font-weight:bold;">${r.amount}</td><td>${r.rate}</td></tr>`;
+                    });
+                    document.getElementById('omo-future-table').innerHTML = html;
+                } else {
+                    document.getElementById('omo-future-table').innerHTML = "<tr><td>未来 14 天无流动性到期清算</td></tr>";
+                }
+
+                // 解禁预告
                 const unlockList = safeGet(data, 'unlock_calendar');
                 if(Array.isArray(unlockList) && unlockList.length > 0) {
-                    let html = "<tr><th>解禁日期</th><th>股票代码</th><th>股票简称</th><th>解禁总量</th></tr>";
+                    let html = "<tr><th>解禁日期</th><th>代码</th><th>简称</th><th>规模</th></tr>";
                     unlockList.forEach(r => {
                         html += `<tr><td>${r.date}</td><td>${r.code}</td><td>${r.name}</td><td>${r.amount}</td></tr>`;
                     });
                     document.getElementById('unlock-table').innerHTML = html;
-                } else {
-                    document.getElementById('unlock-table').innerHTML = "<tr><td>近期无非ST主板大规模解禁</td></tr>";
                 }
 
-                // 6. 渲染中信龙虎持仓
+                // 期货持仓
                 const futuresList = safeGet(data, 'citic_futures');
                 if(Array.isArray(futuresList) && futuresList.length > 0) {
-                    let html = "<tr><th>名次</th><th>多单机构</th><th>多单持仓</th><th>空单机构</th><th>空单持仓</th></tr>";
+                    let html = "<tr><th>名次</th><th>多头主力</th><th>多单</th><th>空头主力</th><th>空单</th></tr>";
                     futuresList.forEach(r => {
                         html += `<tr><td>${r.rank}</td><td>${r.long_inst}</td><td>${r.long_val}</td><td>${r.short_inst}</td><td>${r.short_val}</td></tr>`;
                     });
                     document.getElementById('futures-table').innerHTML = html;
-                } else {
-                    document.getElementById('futures-table').innerHTML = "<tr><td>非交易日或持仓龙虎榜未公布</td></tr>";
                 }
-            })
-            .catch(err => {
-                console.error("加载看板核心 JSON 失败:", err);
-                document.body.insertAdjacentHTML('afterbegin', '<div style="color:red;padding:10px;background:#fff1f0;border:1px solid #ffa39e;margin-bottom:15px;">⚠️ 看板数据文件 (data.json) 暂未上线或部署同步中，请等待首次工作流推送。</div>');
             });
     </script>
 </body>
