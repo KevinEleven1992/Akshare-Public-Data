@@ -21,15 +21,15 @@
 
     <div class="header">
         <h2>📊 全球宏观与市场数据全景看板</h2>
-        <div>⏰ 数据更新时间 (每日21点): <strong id="update-time">-</strong></div>
+        <div>⏰ 数据更新时间: <strong id="update-time">-</strong></div>
     </div>
 
     <div class="grid">
         <div class="card">
             <h3>💱 实时汇率 & 市场情绪</h3>
-            <div>在岸人民币 (USDCNY): <span id="onshore" class="metric-value">-</span></div>
-            <div>离岸人民币 (USDCNH): <span id="offshore" class="metric-value">-</span></div>
-            <div style="margin-top:15px;">A股恐慌贪婪指数: <strong id="fear-greed">-</strong></div>
+            <div>美元/人民币 (USDCNY): <span id="onshore" class="metric-value">-</span></div>
+            <div>美元/离岸离岸 (USDCNH): <span id="offshore" class="metric-value">-</span></div>
+            <div style="margin-top:15px;">A股赚钱效应多头指数: <strong id="fear-greed">-</strong></div>
         </div>
 
         <div class="card">
@@ -37,92 +37,102 @@
             <div>中国 5年期 LPR: <strong id="cn-lpr">-</strong></div>
             <div>美债 10年期收益率: <strong id="us-bond">-</strong></div>
             <hr style="border:0; border-top:1px solid var(--border); margin:15px 0;">
-            <div>国内黄金主力: <strong id="gold-price">-</strong> 元/克</div>
-            <div>国内原油主力: <strong id="oil-price">-</strong> 元/桶</div>
+            <div>全球黄金主力: <strong id="gold-price">-</strong></div>
+            <div>国际原油主力: <strong id="oil-price">-</strong></div>
         </div>
 
         <div class="card">
             <h3>📈 杠杆资金（两融余额）</h3>
-            <div id="margin-date" style="font-size:12px; color:#6c757d;"></div>
+            <div id="margin-date" style="font-size:12px; color:#6c757d;">统计日期: -</div>
             <div id="margin-val" class="metric-value">-</div>
         </div>
     </div>
 
-    <h3 style="margin-top:40px;">📅 核心日历与龙虎榜数据</h3>
+    <h3 style="margin-top:40px;">📅 核心日历与主力持仓数据</h3>
     <div class="grid">
         <div class="card">
             <h3>🇨🇳 央行公开市场操作日历</h3>
-            <table id="omo-table"><tr><td>正在加载中...</td></tr></table>
+            <table id="omo-table"><tr><td>正在加载最新全景日历...</td></tr></table>
         </div>
         <div class="card">
             <h3>🔓 A股非ST主板解禁预告</h3>
-            <table id="unlock-table"><tr><td>正在加载中...</td></tr></table>
+            <table id="unlock-table"><tr><td>正在加载最新解禁日程...</td></tr></table>
         </div>
         <div class="card">
             <h3>⚡ 中信期货主力持仓 (IF)</h3>
-            <table id="futures-table"><tr><td>正在加载中...</td></tr></table>
+            <table id="futures-table"><tr><td>正在加载中信持仓龙虎榜...</td></tr></table>
         </div>
     </div>
 
     <script>
+        // 高鲁棒性安全路径解构器
         const safeGet = (obj, path, fallback = "-") => {
-            return path.split('.').reduce((acc, part) => acc && acc[part] !== undefined ? acc[part] : null, obj) || fallback;
+            return path.split('.').reduce((acc, part) => (acc && acc[part] !== undefined && acc[part] !== null) ? acc[part] : null, obj) || fallback;
         };
 
-        fetch('data.json?v=' + new Date().getTime())
+        fetch('./data.json?v=' + new Date().getTime())
             .then(res => res.json())
             .then(data => {
                 document.getElementById('update-time').innerText = safeGet(data, 'update_time');
                 
-                // 汇率与情绪展示
+                // 1. 汇率与市场情绪
                 document.getElementById('onshore').innerText = safeGet(data, 'exchange_rate.USDCNY_Onshore');
                 document.getElementById('offshore').innerText = safeGet(data, 'exchange_rate.USDCNH_Offshore');
                 
-                const fg = safeGet(data, 'macro_metrics.fear_greed');
-                if(fg !== "-") document.getElementById('fear-greed').innerText = `指数值: ${fg.value || '-'} (${fg.sentiment || '-'})`;
+                const fgValue = safeGet(data, 'macro_metrics.fear_greed.value');
+                const fgSentiment = safeGet(data, 'macro_metrics.fear_greed.sentiment');
+                document.getElementById('fear-greed').innerText = `${fgValue} (${fgSentiment})`;
 
-                // 利率大宗
-                document.getElementById('cn-lpr').innerText = safeGet(data, 'macro_metrics.interest_rate.china_lpr_5y') + "%";
-                document.getElementById('us-bond').innerText = safeGet(data, 'macro_metrics.interest_rate.us_bond_10y') + "%";
+                // 2. 利率与全球大宗
+                document.getElementById('cn-lpr').innerText = safeGet(data, 'macro_metrics.interest_rate.china_lpr_5y');
+                document.getElementById('us-bond').innerText = safeGet(data, 'macro_metrics.interest_rate.us_bond_10y');
                 document.getElementById('gold-price').innerText = safeGet(data, 'macro_metrics.commodity.gold');
                 document.getElementById('oil-price').innerText = safeGet(data, 'macro_metrics.commodity.oil');
 
-                // 两融
-                document.getElementById('margin-date').innerText = "统计日期: " + safeGet(data, 'macro_metrics.margin_balance.日期');
-                const mVal = safeGet(data, 'macro_metrics.margin_balance.融资融券余额');
-                document.getElementById('margin-val').innerText = mVal !== "-" ? (mVal / 100000000).toFixed(2) + " 亿元" : "-";
+                // 3. 杠杆两融资金
+                document.getElementById('margin-date').innerText = "统计日期: " + safeGet(data, 'macro_metrics.margin_balance.date');
+                document.getElementById('margin-val').innerText = safeGet(data, 'macro_metrics.margin_balance.value');
 
-                // 渲染OMO日历
-                const omo = safeGet(data, 'pboc_omo.history_7d');
-                if(Array.isArray(omo)) {
-                    let html = "<tr><th>日期</th><th>方向</th><th>操作量</th><th>利率</th></tr>";
-                    omo.forEach(r => {
-                        html += `<tr><td>${r.发布日期 || r.日期 || '-'}</td><td>${r.操作种类 || r.交易方向 || '-'}</td><td>${r['操作量'] || r['交易量(亿)'] || '-'}</td><td>${r['中标利率'] || r['利率(%)'] || '-'}</td></tr>`;
+                // 4. 渲染央行 OMO 表格 (全面切换至归一化英文 Key)
+                const omoList = safeGet(data, 'pboc_omo.history_7d');
+                if(Array.isArray(omoList) && omoList.length > 0) {
+                    let html = "<tr><th>操作日期</th><th>操作方向</th><th>操作量</th><th>中标利率</th></tr>";
+                    omoList.forEach(r => {
+                        html += `<tr><td>${r.date}</td><td>${r.direction}</td><td>${r.amount}</td><td>${r.rate}</td></tr>`;
                     });
                     document.getElementById('omo-table').innerHTML = html;
+                } else {
+                    document.getElementById('omo-table').innerHTML = "<tr><td>暂无近期公开市场操作数据</td></tr>";
                 }
 
-                // 渲染解禁
-                const unl = safeGet(data, 'unlock_calendar');
-                if(Array.isArray(unl)) {
-                    let html = "<tr><th>解禁时间</th><th>代码</th><th>简称</th><th>数量</th></tr>";
-                    unl.forEach(r => {
-                        html += `<tr><td>${r.解禁时间}</td><td>${r.股票代码}</td><td>${r.股票简称}</td><td>${(r['解禁数量(股)']/10000).toFixed(0)}万股</td></tr>`;
+                // 5. 渲染 A股主板解禁
+                const unlockList = safeGet(data, 'unlock_calendar');
+                if(Array.isArray(unlockList) && unlockList.length > 0) {
+                    let html = "<tr><th>解禁日期</th><th>股票代码</th><th>股票简称</th><th>解禁总量</th></tr>";
+                    unlockList.forEach(r => {
+                        html += `<tr><td>${r.date}</td><td>${r.code}</td><td>${r.name}</td><td>${r.amount}</td></tr>`;
                     });
                     document.getElementById('unlock-table').innerHTML = html;
+                } else {
+                    document.getElementById('unlock-table').innerHTML = "<tr><td>近期无非ST主板大规模解禁</td></tr>";
                 }
 
-                // 渲染期货持仓
-                const fut = safeGet(data, 'citic_futures');
-                if(Array.isArray(fut)) {
-                    let html = "<tr><th>名次</th><th>多单机构</th><th>多单量</th><th>空单机构</th><th>空单量</th></tr>";
-                    fut.forEach(r => {
-                        html += `<tr><td>${r.名次}</td><td>${r.多头持仓机构名称||'-'}</td><td>${r.多头持仓量||'-'}</td><td>${r.空头持仓机构名称||'-'}</td><td>${r.空头持仓量||'-'}</td></tr>`;
+                // 6. 渲染中信龙虎持仓
+                const futuresList = safeGet(data, 'citic_futures');
+                if(Array.isArray(futuresList) && futuresList.length > 0) {
+                    let html = "<tr><th>名次</th><th>多单机构</th><th>多单持仓</th><th>空单机构</th><th>空单持仓</th></tr>";
+                    futuresList.forEach(r => {
+                        html += `<tr><td>${r.rank}</td><td>${r.long_inst}</td><td>${r.long_val}</td><td>${r.short_inst}</td><td>${r.short_val}</td></tr>`;
                     });
                     document.getElementById('futures-table').innerHTML = html;
+                } else {
+                    document.getElementById('futures-table').innerHTML = "<tr><td>非交易日或持仓龙虎榜未公布</td></tr>";
                 }
             })
-            .catch(err => console.error("读取看板数据失败:", err));
+            .catch(err => {
+                console.error("加载看板核心 JSON 失败:", err);
+                document.body.insertAdjacentHTML('afterbegin', '<div style="color:red;padding:10px;background:#fff1f0;border:1px solid #ffa39e;margin-bottom:15px;">⚠️ 看板数据文件 (data.json) 暂未上线或部署同步中，请等待首次工作流推送。</div>');
+            });
     </script>
 </body>
 </html>
