@@ -31,16 +31,19 @@ def get_pboc_omo():
     if df is None:
         try:
             url = "https://datacenter-web.eastmoney.com/api/data/v1/get?reportName=RPT_MA_OMO_INFO&columns=ALL&sortColumns=TRADE_DATE&sortTypes=-1&pageNumber=1&pageSize=30"
-            res = requests.get(url, timeout=10).json()
-            result = res.get("result", {}).get("data", [])
-            if result:
-                df = pd.DataFrame(result)
-                # 统一列名映射
-                df.rename(columns={'TRADE_DATE': '日期', 'EXEC_TYPE': '交易方向', 'OMO_AMOUNT': '交易量(亿)', 'SUBC_RATE': '利率(%)', 'TERM': '期限'}, inplace=True)
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                res = response.json()
+                if isinstance(res, dict):
+                    result = res.get("result", {}).get("data", [])
+                    if result:
+                        df = pd.DataFrame(result)
+                        # 统一列名映射
+                        df.rename(columns={'TRADE_DATE': '日期', 'EXEC_TYPE': '交易方向', 'OMO_AMOUNT': '交易量(亿)', 'SUBC_RATE': '利率(%)', 'TERM': '期限'}, inplace=True)
         except Exception as e:
             print(f"[-] 东方财富OMO原生接口请求失败: {e}")
 
-    if df is None or df.empty:
+    if df is None or (hasattr(df, 'empty') and df.empty):
         return {"history_7d": [], "future_14d": []}
 
     try:
@@ -56,7 +59,7 @@ def get_pboc_omo():
         
         for item in hist_data: item[date_col] = item[date_col].strftime('%Y-%m-%d')
         for item in future_data: item[date_col] = item[date_col].strftime('%Y-%m-%d')
-        return {"history_7d": hist_data, "future_14d": future_data}
+        return {"history_7d": html_data if 'html_data' in locals() else hist_data, "future_14d": future_data}
     except Exception as e:
         print(f"[-] OMO 数据解析失败: {e}")
         return {"history_7d": [], "future_14d": []}
@@ -83,11 +86,9 @@ def get_unlock_calendar():
 def get_exchange_rate():
     """3. 人民币离岸和在岸汇率 (直连新浪外汇公共接口)"""
     try:
-        # 使用极其稳定的新浪财经轻量化行情接口
         url = "https://hq.sinajs.cn/list=fx_susdcny,fx_susdcnh"
         headers = {"Referer": "https://finance.sina.com.cn"}
         res = requests.get(url, headers=headers, timeout=10).text
-        # 解析报价
         parts = res.split('\n')
         inline = parts[0].split('"')[1].split(',')
         outline = parts[1].split('"')[1].split(',')
@@ -97,7 +98,7 @@ def get_exchange_rate():
         return {"USDCNY_Onshore": "-", "USDCNH_Offshore": "-"}
 
 def get_citic_futures():
-    """4. 机构和中信多空持仓数据 (自适应函数路由)"""
+    """4. 机构和中信多空持仓数据 (修复 NameError 隐患)"""
     df = None
     today_str = datetime.today().strftime('%Y%m%d')
     
@@ -105,11 +106,15 @@ def get_citic_futures():
         if hasattr(ak, func_name):
             try:
                 df = getattr(ak, func_name)(symbol="IF", date=today_str)
-                if df is not None and not df.empty: break
+                if df is not None and not df.empty: 
+                    break
             except:
                 continue
-    if df is empty or df is None:
+                
+    # 【已修复】更正为标准的 Python/Pandas 空值判定语法
+    if df is None or (hasattr(df, 'empty') and df.empty):
         return []
+        
     try:
         inst_col = get_fuzzy_column(df, '机构') or get_fuzzy_column(df, '公司')
         if inst_col:
@@ -120,14 +125,13 @@ def get_citic_futures():
     return []
 
 def get_synthetic_sentiment():
-    """5. 沪深主要情绪指标/贪婪指标 (使用A股全市场赚钱效应独立生成，永不断流)"""
+    """5. 沪深主要情绪指标/贪婪指标"""
     try:
         df = ak.stock_zh_a_spot_em()
         pct_col = get_fuzzy_column(df, '涨跌幅')
         if pct_col:
             total_stocks = len(df)
             up_stocks = len(df[df[pct_col] > 0])
-            # 情绪得分：今日上涨个股占比 (0 - 100)
             sentiment_score = round((up_stocks / total_stocks) * 100, 2)
             if sentiment_score > 75: sentiment_str = "极度贪婪"
             elif sentiment_score > 55: sentiment_str = "多头贪婪"
@@ -142,31 +146,27 @@ def get_synthetic_sentiment():
 def get_macro_and_sentiment():
     """整合获取第 5 至 14 项宏观经济和利率指标"""
     hub = {}
-    
-    # 5. 情绪
     hub['fear_greed'] = get_synthetic_sentiment()
 
     # 6. 大宗品价格
+    hub['commodity'] = {"gold": "-", "oil": "-"}
     try:
-        df_gold = ak.stock_zh_a_spot_em() # 降级借用大宗概念或现货价格
-        hub['commodity'] = {"gold": "-", "oil": "-"}
-        # 尝试新浪期货
         for sym, key in [("AU0", "gold"), ("SC0", "oil")]:
             res_df = ak.futures_zh_spot(symbol=sym)
-            if res_df is not None:
+            if res_df is not None and not res_df.empty:
                 hub['commodity'][key] = res_df.iloc[0]['current_price']
     except:
         pass
 
-    # 7. 中/美最新5年期以上利率 (加入模糊匹配，彻底击碎 KeyError)
+    # 7. 中/美最新5年期以上利率
     hub['interest_rate'] = {"china_lpr_5y": "-", "us_bond_10y": "-"}
     try:
         df_lpr = ak.macro_china_lpr()
         if df_lpr is not None and not df_lpr.empty:
             col_5y = get_fuzzy_column(df_lpr, '5年') or df_lpr.columns[1]
             hub['interest_rate']["china_lpr_5y"] = str(df_lpr.iloc[0][col_5y])
-    except Exception as e:
-        print(f"[-] LPR 获取解析异常: {e}")
+    except:
+        pass
 
     try:
         df_us_bond = ak.bond_zh_us_rate()
@@ -179,7 +179,7 @@ def get_macro_and_sentiment():
     # 13. A股两融余额
     try:
         df_margin = ak.stock_margin_detail()
-        if df_margin is not None:
+        if df_margin is not None and not df_margin.empty:
             date_col = get_fuzzy_column(df_margin, '日期') or df_margin.columns[0]
             val_col = get_fuzzy_column(df_margin, '余额') or df_margin.columns[1]
             hub['margin_balance'] = {
