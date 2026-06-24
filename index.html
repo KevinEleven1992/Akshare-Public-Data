@@ -3,182 +3,143 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>高级量化宏观与流动性日历全景看板</title>
+    <title>量化金融宏观脉络与全合约多空全景看板</title>
     <style>
-        :root { --bg-color: #f4f6f9; --card-bg: #ffffff; --text-main: #2b303a; --primary: #1a73e8; --border: #e2e8f0; --success: #2ec4b6; --danger: #e71d36; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif; background: var(--bg-color); color: var(--text-main); margin: 0; padding: 24px; }
+        :root { --bg: #f6f8fa; --card: #ffffff; --primary: #1a73e8; --border: #e8ecf3; --text: #1e293b; --success: #10b981; --danger: #ef4444; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 24px; }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--border); padding-bottom: 16px; margin-bottom: 24px; }
-        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px; }
-        .card { background: var(--card-bg); border-radius: 14px; padding: 24px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid var(--border); }
-        .card h3 { margin-top: 0; color: var(--primary); font-size: 18px; border-bottom: 1px solid var(--border); padding-bottom: 12px; margin-bottom: 16px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 24px; }
+        .card { background: var(--card); border-radius: 12px; padding: 20px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0,0,0,0.01); }
+        .card h3 { margin-top: 0; color: #0f172a; font-size: 16px; border-left: 4px solid var(--primary); padding-left: 10px; margin-bottom: 16px; }
         .full-width { grid-column: 1 / -1; }
-        .sub-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-        @media(max-width: 768px) { .sub-grid { grid-template-columns: 1fr; } }
         table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
-        th, td { padding: 12px 10px; border-bottom: 1px solid var(--border); }
-        th { background: #fafbfc; font-weight: 600; color: #5a6275; }
-        .badge { padding: 4px 8px; border-radius: 6px; font-size: 11px; font-weight: bold; color:#fff; }
-        .badge-up { background-color: var(--success); }
-        .badge-down { background-color: var(--danger); }
-        .metric-group { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; }
-        .metric-value { font-size: 26px; font-weight: 800; color: #1e293b; margin: 8px 0; }
+        th, td { padding: 10px; border-bottom: 1px solid var(--border); }
+        th { background: #f8fafc; font-weight: 600; color: #64748b; }
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; color:#fff; }
+        .badge-up { background: var(--success); }
+        .badge-down { background: var(--danger); }
+        .sentiment-container { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+        .sentiment-card { border: 1px solid var(--border); border-radius: 8px; padding: 14px; text-align: center; background: #fafbfc; }
+        .score-display { font-size: 28px; font-weight: 800; margin: 8px 0; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <h2>📊 宏观深度策略与流动性全景看板 (2.0 Pro)</h2>
-        <div>系统最后同步: <strong id="update-time" style="color:var(--primary);">-</strong></div>
+        <h2>📈 深度策略量化宏观与全合约持仓看板</h2>
+        <div style="font-size:13px; color:#64748b;">数据同步时间: <strong id="update-time" style="color:var(--primary);">-</strong></div>
     </div>
 
     <div class="grid">
-        <div class="card">
-            <h3>💱 核心汇率与广义情绪</h3>
-            <div class="metric-group"><span>在岸人民币 (USD/CNY):</span><strong id="onshore">-</strong></div>
-            <div class="metric-group"><span>离岸人民币 (USD/CNH):</span><strong id="offshore">-</strong></div>
-            <div style="margin-top:16px; padding:12px; background:#f8fafc; border-radius:8px;">
-                <span>A股多头赚钱效应脉冲指数:</span>
-                <div id="fear-greed" style="font-size:20px; font-weight:bold; color:var(--danger); margin-top:4px;">-</div>
-            </div>
-        </div>
-
-        <div class="card">
-            <h3>🏦 中美基准金锚</h3>
-            <div class="metric-group"><span>中国 5年期 LPR 利率:</span><strong id="cn-lpr" style="color:var(--danger); font-weight:bold;">-</strong></div>
-            <div class="metric-group"><span>10年期美国国债收益率:</span><strong id="us-bond">-</strong></div>
-            <div class="metric-group" style="margin-top:20px;"><span>国际黄金连续:</span><span id="gold-price">-</span></div>
-            <div class="metric-group"><span>WTI 原油连续:</span><span id="oil-price">-</span></div>
-        </div>
-
-        <div class="card">
-            <h3>📈 广义杠杆信用能力</h3>
-            <div id="margin-date" style="font-size:12px; color:#64748b; margin-bottom:4px;">两融数据截至: -</div>
-            <div id="margin-val" class="metric-value">-</div>
-            <div style="font-size:12px; color:#94a3b8;">代表场内活跃长线高杠杆游资深度风险偏好。</div>
+        <div class="card full-width">
+            <h3>🎯 核心宽基指数多维度量化情绪矩阵 (量价动能/乖离清洗/规模分位)</h3>
+            <div class="sentiment-container" id="sentiment-matrix-box">
+                </div>
         </div>
 
         <div class="card full-width">
-            <h3>🌍 全球核心宏观周期动能追踪</h3>
-            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:15px; text-align:center;">
-                <div style="background:#fff; border:1px solid var(--border); padding:12px; border-radius:8px;">
-                    <div style="color:#64748b; font-size:12px;">中国 CPI (同比)</div>
-                    <div id="c-cpi" style="font-size:18px; font-weight:bold; margin-top:6px; color:var(--primary);">-</div>
+            <h3>🏦 央行 OMO 滚动到期勾稽日历表 (7日投放反向追踪逻辑)</h3>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div>
+                    <h4 style="font-size:13px; color:#64748b; margin-bottom:8px;">📅 近 7 日央行主动资金注入</h4>
+                    <table id="omo-hist"></table>
                 </div>
-                <div style="background:#fff; border:1px solid var(--border); padding:12px; border-radius:8px;">
-                    <div style="color:#64748b; font-size:12px;">中国 PPI (同比)</div>
-                    <div id="c-ppi" style="font-size:18px; font-weight:bold; margin-top:6px;">-</div>
-                </div>
-                <div style="background:#fff; border:1px solid var(--border); padding:12px; border-radius:8px;">
-                    <div style="color:#64748b; font-size:12px;">中国 制造业PMI</div>
-                    <div id="c-pmi" style="font-size:18px; font-weight:bold; margin-top:6px;">-</div>
-                </div>
-                <div style="background:#fff; border:1px solid var(--border); padding:12px; border-radius:8px;">
-                    <div style="color:#64748b; font-size:12px;">美国 核心CPI</div>
-                    <div id="u-cpi" style="font-size:18px; font-weight:bold; margin-top:6px; color:var(--danger);">-</div>
-                </div>
-                <div style="background:#fff; border:1px solid var(--border); padding:12px; border-radius:8px;">
-                    <div style="color:#64748b; font-size:12px;">美国 制造业PMI</div>
-                    <div id="u-pmi" style="font-size:18px; font-weight:bold; margin-top:6px;">-</div>
+                <div>
+                    <h4 style="font-size:13px; color:#64748b; margin-bottom:8px;">🔮 未来 14 日内刚性流出矩阵 (滚动推演算力)</h4>
+                    <table id="omo-future"></table>
                 </div>
             </div>
         </div>
 
         <div class="card full-width">
-            <h3>🇨🇳 央行公开市场操作工具箱 (OMO) 深度对冲全景日历</h3>
-            <div class="sub-grid">
-                <div>
-                    <h4 style="margin:0 0 10px 0; font-size:14px; color:#475569;">👇 当前日期及历史近期逆回购投放记录</h4>
-                    <table id="omo-hist-table"><tr><td>正在安全链接公开接口...</td></tr></table>
-                </div>
-                <div>
-                    <h4 style="margin:0 0 10px 0; font-size:14px; color:#475569;">🔮 未来 14 天内即将到期的逆回购流出日历表</h4>
-                    <table id="omo-future-table"><tr><td>正在计算到期对冲规模...</td></tr></table>
-                </div>
-            </div>
+            <h3>⚡ 期指全合约穿透：核心机构全量头寸轧差龙虎榜 (IF全存续期穿透)</h3>
+            <table id="futures-penetration-table"></table>
         </div>
 
         <div class="card">
-            <h3>🔓 核心主板非ST大规模解禁日程</h3>
-            <table id="unlock-table"><tr><td>拉取核心持仓到期日历...</td></tr></table>
+            <h3>🌍 全球核心宏观周期</h3>
+            <table style="width:100%">
+                <tr><td>中国 CPI (同比)</td><td><strong id="c-cpi">-</strong></td></tr>
+                <tr><td>中国 PPI (同比)</td><td><strong id="c-ppi">-</strong></td></tr>
+                <tr><td>中国 制造业PMI</td><td><strong id="c-pmi">-</strong></td></tr>
+                <tr><td>货币剪刀差</td><td><span id="c-m1m2" style="font-size:11px;">-</span></td></tr>
+                <tr><td>美债 10Y 收益率</td><td><strong id="u-bond" style="color:var(--danger);">-</strong></td></tr>
+            </table>
         </div>
 
         <div class="card">
-            <h3>⚡ 中信期货主力持仓机构多空对垒龙虎榜 (IF连续)</h3>
-            <table id="futures-table"><tr><td>动态追溯最新结算持仓中...</td></tr></table>
+            <h3>💱 大宗及外汇动态锚</h3>
+            <table style="width:100%">
+                <tr><td>在岸人民币 (USDCNY)</td><td id="onshore">-</td></tr>
+                <tr><td>离岸人民币 (USDCNH)</td><td id="offshore">-</td></tr>
+                <tr><td>伦敦现货黄金</td><td id="gold">-</td></tr>
+                <tr><td>WTI 核心原油</td><td id="oil">-</td></tr>
+            </table>
         </div>
     </div>
 
     <script>
-        const safeGet = (obj, path, fallback = "-") => {
-            return path.split('.').reduce((acc, part) => (acc && acc[part] !== undefined && acc[part] !== null) ? acc[part] : null, obj) || fallback;
-        };
-
         fetch('./data.json?v=' + new Date().getTime())
             .then(res => res.json())
             .then(data => {
-                document.getElementById('update-time').innerText = safeGet(data, 'update_time');
-                
-                // 基础面板
-                document.getElementById('onshore').innerText = safeGet(data, 'exchange_rate.USDCNY_Onshore');
-                document.getElementById('offshore').innerText = safeGet(data, 'exchange_rate.USDCNH_Offshore');
-                document.getElementById('fear-greed').innerText = `${safeGet(data, 'macro_metrics.fear_greed.value')}% (${safeGet(data, 'macro_metrics.fear_greed.sentiment')})`;
-                document.getElementById('cn-lpr').innerText = safeGet(data, 'macro_metrics.interest_rate.china_lpr_5y');
-                document.getElementById('us-bond').innerText = safeGet(data, 'macro_metrics.interest_rate.us_bond_10y');
-                document.getElementById('gold-price').innerText = safeGet(data, 'macro_metrics.commodity.gold');
-                document.getElementById('oil-price').innerText = safeGet(data, 'macro_metrics.commodity.oil');
-                document.getElementById('margin-date').innerText = "两融数据截至: " + safeGet(data, 'macro_metrics.margin_balance.date');
-                document.getElementById('margin-val').innerText = safeGet(data, 'macro_metrics.margin_balance.value');
+                document.getElementById('update-time').innerText = data.update_time;
+                document.getElementById('c-cpi').innerText = data.macro_metrics.china_cpi;
+                document.getElementById('c-ppi').innerText = data.macro_metrics.china_ppi;
+                document.getElementById('c-pmi').innerText = data.macro_metrics.china_pmi;
+                document.getElementById('c-m1m2').innerText = data.macro_metrics.china_m1_m2;
+                document.getElementById('u-bond').innerText = data.macro_metrics.us_bond_10y;
+                document.getElementById('onshore').innerText = data.exchange_rate.USDCNY_Onshore;
+                document.getElementById('offshore').innerText = data.exchange_rate.USDCNH_Offshore;
+                document.getElementById('gold').innerText = data.macro_metrics.gold;
+                document.getElementById('oil').innerText = data.macro_metrics.oil;
 
-                // 宏观矩阵
-                document.getElementById('c-cpi').innerText = safeGet(data, 'macro_metrics.china_cpi') + "%";
-                document.getElementById('c-ppi').innerText = safeGet(data, 'macro_metrics.china_ppi') + "%";
-                document.getElementById('c-pmi').innerText = safeGet(data, 'macro_metrics.china_pmi');
-                document.getElementById('u-cpi').innerText = safeGet(data, 'macro_metrics.usa_cpi');
-                document.getElementById('u-pmi').innerText = safeGet(data, 'macro_metrics.usa_pmi');
+                // 1. 渲染多指情绪矩阵
+                let sHtml = "";
+                data.multi_index_sentiment.forEach(x => {
+                    let color = "var(--text)";
+                    if(parseFloat(x.score) > 70) color = "var(--danger)";
+                    else if(parseFloat(x.score) < 45) color = "var(--success)";
+                    
+                    sHtml += `
+                        <div class="sentiment-card">
+                            <div style="font-weight:bold; font-size:14px;">${x.name} (${x.code})</div>
+                            <div style="font-size:12px; color:#64748b; margin-top:4px;">当日涨跌: ${x.change}</div>
+                            <div class="score-display" style="color:${color}">${x.score}</div>
+                            <div style="font-size:12px; font-weight:600; color:#475569">${x.desc}</div>
+                        </div>
+                    `;
+                });
+                document.getElementById('sentiment-matrix-box').innerHTML = sHtml;
 
-                // 渲染 OMO 历史投放表
-                const histList = safeGet(data, 'pboc_omo.history_7d');
-                if(Array.isArray(histList) && histList.length > 0) {
-                    let html = "<tr><th>投放操作日</th><th>方向</th><th>操作量</th><th>中标利率</th></tr>";
-                    histList.slice(0, 7).forEach(r => {
-                        const isUp = r.direction.includes("投放") || r.direction.includes("买入");
-                        const badgeClass = isUp ? "badge badge-up" : "badge badge-down";
-                        html += `<tr><td><strong>${r.date}</strong></td><td><span class="${badgeClass}">${r.direction}</span></td><td>font-weight:bold;${r.amount}</td><td>${r.rate}</td></tr>`;
-                    });
-                    document.getElementById('omo-hist-table').innerHTML = html;
-                }
+                // 2. 渲染核心对冲勾稽日历
+                let hHtml = "<tr><th>投放操作日</th><th>动作</th><th>规模</th><th>利率</th></tr>";
+                data.pboc_omo.history_7d.forEach(r => {
+                    hHtml += `<tr><td>${r.date}</td><td><span class="badge badge-up">${r.direction}</span></td><td style="font-weight:bold; color:var(--primary);">${r.amount}</td><td>${r.rate}</td></tr>`;
+                });
+                document.getElementById('omo-hist').innerHTML = hHtml;
 
-                // 渲染 OMO 未来 14 天到期流动性日历表
-                const futureList = safeGet(data, 'pboc_omo.future_14d');
-                if(Array.isArray(futureList) && futureList.length > 0) {
-                    let html = "<tr><th>到期清算日</th><th>方向</th><th>回笼规模</th><th>利率参考</th></tr>";
-                    futureList.forEach(r => {
-                        html += `<tr><td><strong>${r.date}</strong></td><td><span class="badge badge-down">${r.direction}</span></td><td style="color:var(--danger); font-weight:bold;">${r.amount}</td><td>${r.rate}</td></tr>`;
-                    });
-                    document.getElementById('omo-future-table').innerHTML = html;
-                } else {
-                    document.getElementById('omo-future-table').innerHTML = "<tr><td>未来 14 天无流动性到期清算</td></tr>";
-                }
+                let fHtml = "<tr><th>到期清算日</th><th>风险因子</th><th>流出头寸</th><th>利率</th></tr>";
+                data.pboc_omo.future_14d.forEach(r => {
+                    fHtml += `<tr><td>${r.date}</td><td><span class="badge badge-down">${r.direction}</span></td><td style="font-weight:bold; color:var(--danger);">${r.amount}</td><td>${r.rate}</td></tr>`;
+                });
+                document.getElementById('omo-future').innerHTML = fHtml;
 
-                // 解禁预告
-                const unlockList = safeGet(data, 'unlock_calendar');
-                if(Array.isArray(unlockList) && unlockList.length > 0) {
-                    let html = "<tr><th>解禁日期</th><th>代码</th><th>简称</th><th>规模</th></tr>";
-                    unlockList.forEach(r => {
-                        html += `<tr><td>${r.date}</td><td>${r.code}</td><td>${r.name}</td><td>${r.amount}</td></tr>`;
-                    });
-                    document.getElementById('unlock-table').innerHTML = html;
-                }
-
-                // 期货持仓
-                const futuresList = safeGet(data, 'citic_futures');
-                if(Array.isArray(futuresList) && futuresList.length > 0) {
-                    let html = "<tr><th>名次</th><th>多头主力</th><th>多单</th><th>空头主力</th><th>空单</th></tr>";
-                    futuresList.forEach(r => {
-                        html += `<tr><td>${r.rank}</td><td>${r.long_inst}</td><td>${r.long_val}</td><td>${r.short_inst}</td><td>${r.short_val}</td></tr>`;
-                    });
-                    document.getElementById('futures-table').innerHTML = html;
-                }
+                // 3. 渲染全合约持仓穿透龙虎榜
+                let pHtml = "<tr><th>全网排名</th><th>主力风控机构</th><th>跨合约总多单</th><th>跨合约总空单</th><th>轧差纯净持仓 (Net)</th><th>机构风向意图</th></tr>";
+                data.futures_penetration.forEach(r => {
+                    const isShort = r.net.startsWith('-');
+                    const styleColor = isShort ? "var(--danger)" : "var(--success)";
+                    pHtml += `
+                        <tr>
+                            <td><strong>${r.rank}</strong></td>
+                            <td style="font-weight:600;">${r.broker}</td>
+                            <td>${r.long}</td>
+                            <td>${r.short}</td>
+                            <td style="font-weight:bold; color:${styleColor}">${r.net}</td>
+                            <td><span class="badge" style="background:${styleColor}">${r.bias}</span></td>
+                        </tr>`;
+                });
+                document.getElementById('futures-penetration-table').innerHTML = pHtml;
             });
     </script>
 </body>
