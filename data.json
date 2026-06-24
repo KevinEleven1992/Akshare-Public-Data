@@ -1,0 +1,159 @@
+{
+    "update_time": "2026-06-24 15:16:18",
+    "pboc_omo": {
+        "history_7d": [
+            {
+                "date": "2026-06-24",
+                "direction": "逆回购投放",
+                "amount": "150 亿",
+                "rate": "1.70%"
+            },
+            {
+                "date": "2026-06-23",
+                "direction": "逆回购投放",
+                "amount": "150 亿",
+                "rate": "1.70%"
+            },
+            {
+                "date": "2026-06-22",
+                "direction": "逆回购投放",
+                "amount": "150 亿",
+                "rate": "1.70%"
+            },
+            {
+                "date": "2026-06-19",
+                "direction": "逆回购投放",
+                "amount": "150 亿",
+                "rate": "1.70%"
+            },
+            {
+                "date": "2026-06-18",
+                "direction": "逆回购投放",
+                "amount": "150 亿",
+                "rate": "1.70%"
+            }
+        ],
+        "future_14d": [
+            {
+                "date": "2026-06-25",
+                "direction": "逆回购到期",
+                "amount": "120 亿",
+                "rate": "1.70%"
+            },
+            {
+                "date": "2026-06-26",
+                "direction": "逆回购到期",
+                "amount": "120 亿",
+                "rate": "1.70%"
+            },
+            {
+                "date": "2026-06-29",
+                "direction": "逆回购到期",
+                "amount": "120 亿",
+                "rate": "1.70%"
+            },
+            {
+                "date": "2026-06-30",
+                "direction": "逆回购到期",
+                "amount": "120 亿",
+                "rate": "1.70%"
+            },
+            {
+                "date": "2026-07-01",
+                "direction": "逆回购到期",
+                "amount": "120 亿",
+                "rate": "1.70%"
+            },
+            {
+                "date": "2026-07-02",
+                "direction": "逆回购到期",
+                "amount": "120 亿",
+                "rate": "1.70%"
+            },
+            {
+                "date": "2026-07-03",
+                "direction": "逆回购到期",
+                "amount": "120 亿",
+                "rate": "1.70%"
+            },
+            {
+                "date": "2026-07-06",
+                "direction": "逆回购到期",
+                "amount": "120 亿",
+                "rate": "1.70%"
+            },
+            {
+                "date": "2026-07-07",
+                "direction": "逆回购到期",
+                "amount": "120 亿",
+                "rate": "1.70%"
+            },
+            {
+                "date": "2026-07-08",
+                "direction": "逆回购到期",
+                "amount": "120 亿",
+                "rate": "1.70%"
+            }
+        ]
+    },
+    "unlock_calendar": [
+        {
+            "date": "2026-06-26",
+            "code": "601888",
+            "name": "中国中免",
+            "amount": "4500 万股"
+        },
+        {
+            "date": "2026-06-29",
+            "code": "002594",
+            "name": "比亚迪",
+            "amount": "1200 万股"
+        }
+    ],
+    "exchange_rate": {
+        "USDCNY_Onshore": 6.7999,
+        "USDCNH_Offshore": 6.8142
+    },
+    "citic_futures": [
+        {
+            "rank": "1",
+            "long_inst": "中信期货",
+            "long_val": "14,520",
+            "short_inst": "中信期货",
+            "short_val": "16,105"
+        },
+        {
+            "rank": "2",
+            "long_inst": "国泰君安",
+            "long_val": "9,850",
+            "short_inst": "海通期货",
+            "short_val": "11,400"
+        }
+    ],
+    "macro_metrics": {
+        "fear_greed": {
+            "value": "51.4",
+            "sentiment": "情绪相对中性"
+        },
+        "commodity": {
+            "gold": "$4016.3 美元/盎司",
+            "oil": "$69.84 美元/桶"
+        },
+        "interest_rate": {
+            "china_lpr_5y": "4.9%",
+            "us_bond_10y": "0.44%"
+        },
+        "margin_balance": {
+            "date": "2026-06-24",
+            "value": "14,850.40 亿元"
+        },
+        "china_cpi": "107.0781",
+        "china_ppi": "103.1",
+        "china_pmi": "53.0",
+        "china_m1_m2": "417846.17",
+        "china_unemployment": "5.1%",
+        "usa_cpi": "美国CPI月率",
+        "usa_ppi": "2.2%",
+        "usa_pmi": "48.5"
+    }
+}
