@@ -1,5 +1,5 @@
 {
-    "update_time": "2026-07-18 14:20:53",
+    "update_time": "2026-07-19 14:24:34",
     "pboc_omo": {
         "history_7d": [
             {
@@ -150,7 +150,7 @@
         }
     ],
     "exchange_rate": {
-        "USDCNY_Onshore": 6.7768,
+        "USDCNY_Onshore": 6.7755,
         "USDCNH_Offshore": 6.777
     },
     "macro_metrics": {
