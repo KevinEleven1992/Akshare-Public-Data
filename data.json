@@ -1,5 +1,5 @@
 {
-    "update_time": "2026-08-08 13:47:45",
+    "update_time": "2026-08-09 13:51:52",
     "pboc_omo": {
         "history_7d": [
             {
@@ -154,7 +154,7 @@
         "USDCNH_Offshore": 6.7425
     },
     "macro_metrics": {
-        "china_cpi": "1.0%",
+        "china_cpi": "0.5%",
         "china_ppi": "-1.4%",
         "china_pmi": "49.2%",
         "china_m1_m2": "M2: 7.2% / M1: -1.5%",
