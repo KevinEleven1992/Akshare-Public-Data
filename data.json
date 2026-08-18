@@ -1,7 +1,13 @@
 {
-    "update_time": "2026-08-17 13:40:38",
+    "update_time": "2026-08-18 13:43:36",
     "pboc_omo": {
         "history_7d": [
+            {
+                "date": "2026-08-18",
+                "direction": "逆回购投放",
+                "amount": "150 亿",
+                "rate": "1.70%"
+            },
             {
                 "date": "2026-08-17",
                 "direction": "逆回购投放",
@@ -25,21 +31,9 @@
                 "direction": "逆回购投放",
                 "amount": "150 亿",
                 "rate": "1.70%"
-            },
-            {
-                "date": "2026-08-11",
-                "direction": "逆回购投放",
-                "amount": "150 亿",
-                "rate": "1.70%"
             }
         ],
         "future_14d": [
-            {
-                "date": "2026-08-18",
-                "direction": "逆回购到期",
-                "amount": "150 亿",
-                "rate": "1.70%"
-            },
             {
                 "date": "2026-08-19",
                 "direction": "逆回购到期",
@@ -90,6 +84,12 @@
             },
             {
                 "date": "2026-08-31",
+                "direction": "逆回购到期",
+                "amount": "150 亿",
+                "rate": "1.70%"
+            },
+            {
+                "date": "2026-09-01",
                 "direction": "逆回购到期",
                 "amount": "150 亿",
                 "rate": "1.70%"
@@ -150,16 +150,16 @@
         }
     ],
     "exchange_rate": {
-        "USDCNY_Onshore": 6.7397,
-        "USDCNH_Offshore": 6.7414
+        "USDCNY_Onshore": 6.7306,
+        "USDCNH_Offshore": 6.7452
     },
     "macro_metrics": {
         "china_cpi": "0.5%",
         "china_ppi": "-1.4%",
         "china_pmi": "49.2%",
         "china_m1_m2": "M2: 7.2% / M1: -1.5%",
-        "us_bond_10y": "4.7%",
-        "gold": "$4443.7 美元",
-        "oil": "$82.73 美元"
+        "us_bond_10y": "4.74%",
+        "gold": "$4447.2 美元",
+        "oil": "$84.59 美元"
     }
 }
