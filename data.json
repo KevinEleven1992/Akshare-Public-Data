@@ -1,7 +1,13 @@
 {
-    "update_time": "2026-09-06 16:01:23",
+    "update_time": "2026-09-07 18:09:05",
     "pboc_omo": {
         "history_7d": [
+            {
+                "date": "2026-09-07",
+                "direction": "逆回购投放",
+                "amount": "150 亿",
+                "rate": "1.70%"
+            },
             {
                 "date": "2026-09-04",
                 "direction": "逆回购投放",
@@ -25,21 +31,9 @@
                 "direction": "逆回购投放",
                 "amount": "150 亿",
                 "rate": "1.70%"
-            },
-            {
-                "date": "2026-08-31",
-                "direction": "逆回购投放",
-                "amount": "150 亿",
-                "rate": "1.70%"
             }
         ],
         "future_14d": [
-            {
-                "date": "2026-09-07",
-                "direction": "逆回购到期",
-                "amount": "150 亿",
-                "rate": "1.70%"
-            },
             {
                 "date": "2026-09-08",
                 "direction": "逆回购到期",
@@ -90,6 +84,12 @@
             },
             {
                 "date": "2026-09-18",
+                "direction": "逆回购到期",
+                "amount": "150 亿",
+                "rate": "1.70%"
+            },
+            {
+                "date": "2026-09-21",
                 "direction": "逆回购到期",
                 "amount": "150 亿",
                 "rate": "1.70%"
@@ -150,8 +150,8 @@
         }
     ],
     "exchange_rate": {
-        "USDCNY_Onshore": 6.7108,
-        "USDCNH_Offshore": 6.707
+        "USDCNY_Onshore": 6.6991,
+        "USDCNH_Offshore": 6.7093
     },
     "macro_metrics": {
         "china_cpi": "0.5%",
