@@ -1,5 +1,5 @@
 {
-    "update_time": "2026-11-06 19:52:59",
+    "update_time": "2026-11-07 17:57:46",
     "pboc_omo": {
         "history_7d": [
             {
@@ -150,8 +150,8 @@
         }
     ],
     "exchange_rate": {
-        "USDCNY_Onshore": 6.6755,
-        "USDCNH_Offshore": 6.6727
+        "USDCNY_Onshore": 6.6648,
+        "USDCNH_Offshore": 6.6717
     },
     "macro_metrics": {
         "china_cpi": "0.9%",
@@ -159,7 +159,7 @@
         "china_pmi": "49.3%",
         "china_m1_m2": "M2: 7.2% / M1: -1.5%",
         "us_bond_10y": "4.86%",
-        "gold": "$4073.3 美元",
-        "oil": "$91.1 美元"
+        "gold": "$4074.9 美元",
+        "oil": "$90.83 美元"
     }
 }
