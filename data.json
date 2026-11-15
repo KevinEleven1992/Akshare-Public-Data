@@ -1,5 +1,5 @@
 {
-    "update_time": "2026-11-14 18:40:17",
+    "update_time": "2026-11-15 19:16:35",
     "pboc_omo": {
         "history_7d": [
             {
@@ -150,8 +150,8 @@
         }
     ],
     "exchange_rate": {
-        "USDCNY_Onshore": 6.6621,
-        "USDCNH_Offshore": 6.6738
+        "USDCNY_Onshore": 6.6705,
+        "USDCNH_Offshore": 6.6716
     },
     "macro_metrics": {
         "china_cpi": "0.7%",
